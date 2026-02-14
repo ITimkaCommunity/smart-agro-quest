@@ -1,7 +1,8 @@
 # Анализ и оценка текущего состояния проекта EduFarm
 
-**Дата анализа:** 2025-11-17  
-**Версия проекта:** 1.0 (Post-Supabase Migration)
+**Дата анализа:** 2026-02-14  
+**Версия проекта:** 1.0 (Post-Supabase Migration)  
+**Репозиторий:** https://github.com/ITimkaCommunity/smart-agro-quest
 
 ---
 

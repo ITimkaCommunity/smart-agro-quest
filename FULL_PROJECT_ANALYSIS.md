@@ -1,7 +1,8 @@
 # 🔍 Полный анализ проекта EduFarm (Frontend + Backend)
 
-**Дата анализа:** 2025-11-17  
-**Версия:** Post-Supabase Migration (Custom Backend)
+**Дата анализа:** 2026-02-14  
+**Версия:** Post-Supabase Migration (Custom Backend)  
+**Репозиторий:** https://github.com/ITimkaCommunity/smart-agro-quest
 
 ---
 
