@@ -23,12 +23,16 @@ export class PetService {
 
   async getUserPet(userId: string): Promise<Pet | null> {
     const pet = await this.petsRepo.findOne({
-      where: { userId, ranAwayAt: null },
+      where: { userId, ranAwayAt: null as any },
     });
 
     if (pet) {
       // Update stats based on time passed
       await this.updatePetStats(pet);
+      // Pet may have run away during updatePetStats
+      if (pet.ranAwayAt) {
+        return null;
+      }
     }
 
     return pet;
@@ -37,11 +41,13 @@ export class PetService {
   async createPet(userId: string, createPetDto: CreatePetDto): Promise<Pet> {
     console.log('[PetService] createPet called:', { userId, createPetDto });
     
-    // Check if user already has a pet
+    // Check if user already has an active (non-runaway) pet
     const existingPet = await this.getUserPet(userId);
-    console.log('[PetService] Existing pet check:', existingPet ? 'exists' : 'not found');
-    if (existingPet) {
-      console.log('[PetService] User already has a pet, throwing BadRequestException');
+    console.log('[PetService] Existing pet check:', existingPet ? `exists (ranAwayAt: ${existingPet.ranAwayAt})` : 'not found');
+    // getUserPet may return a pet that just ran away during updatePetStats,
+    // so we need to double-check ranAwayAt
+    if (existingPet && !existingPet.ranAwayAt) {
+      console.log('[PetService] User already has an active pet, throwing BadRequestException');
       throw new BadRequestException('User already has a pet');
     }
 
