@@ -61,17 +61,18 @@ const Pet = () => {
     refreshPet();
   }, [pet, refreshPet]);
 
-  // Memoize the config object to prevent recreating useRealtimeUpdates
+  // Memoize the config object - only depends on stable userId
   const realtimeConfig = useMemo(() => ({
     userId: user?.id || null,
-    enableToasts,
+    enableToasts: enableToasts,
     onPetCreated: handlePetCreated,
     onPetStatsUpdate: handlePetUpdate,
     onPetFed: handlePetUpdate,
     onPetWatered: handlePetUpdate,
     onPetPlayed: handlePetUpdate,
     onPetRanAway: handlePetUpdate,
-  }), [user?.id, enableToasts, handlePetCreated, handlePetUpdate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [user?.id]);
 
   const { isConnected, connectionError } = useRealtimeUpdates(realtimeConfig);
 

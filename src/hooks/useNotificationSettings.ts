@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export interface NotificationSettings {
   enableToasts: boolean;
@@ -28,7 +28,7 @@ export function useNotificationSettings() {
     }
   }, []);
 
-  const shouldShowToast = (type: 'farm' | 'pet' | 'production'): boolean => {
+  const shouldShowToast = useCallback((type: 'farm' | 'pet' | 'production'): boolean => {
     if (!settings.enableToasts) return false;
     
     switch (type) {
@@ -41,7 +41,7 @@ export function useNotificationSettings() {
       default:
         return true;
     }
-  };
+  }, [settings]);
 
   return {
     settings,

@@ -63,9 +63,12 @@ const Farm = () => {
   useEffect(() => {
     const loadZones = async () => {
       try {
+        console.log('[Farm] Loading zones...');
         const zones = await zonesApi.getAllZones();
-        setFarmZones(zones);
+        console.log('[Farm] Zones loaded:', zones?.length, zones);
+        setFarmZones(zones || []);
       } catch (error: any) {
+        console.error('[Farm] Error loading zones:', error);
         toast({
           title: "Ошибка загрузки зон",
           description: error.message,
@@ -79,7 +82,8 @@ const Farm = () => {
     if (isAuthenticated) {
       loadZones();
     }
-  }, [isAuthenticated, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   if (authLoading || loading) {
     return (
