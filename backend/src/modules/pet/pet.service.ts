@@ -163,7 +163,8 @@ export class PetService {
     const now = Date.now();
     const hourInMs = 3600000;
 
-    // Decrease stats over time (1 point per hour)
+    // Calculate stats based on time since last interaction
+    // Use stored values as the "base" set at last interaction time
     const hoursSinceFed = Math.floor(
       (now - new Date(pet.lastFedAt).getTime()) / hourInMs,
     );
@@ -174,9 +175,10 @@ export class PetService {
       (now - new Date(pet.lastPlayedAt).getTime()) / hourInMs,
     );
 
-    pet.hunger = Math.max(0, pet.hunger - hoursSinceFed);
-    pet.thirst = Math.max(0, pet.thirst - hoursSinceWatered);
-    pet.happiness = Math.max(0, pet.happiness - hoursSincePlayed);
+    // Calculate display stats without modifying stored values
+    const currentHunger = Math.max(0, pet.hunger - hoursSinceFed);
+    const currentThirst = Math.max(0, pet.thirst - hoursSinceWatered);
+    const currentHappiness = Math.max(0, pet.happiness - hoursSincePlayed);
 
     // Check if pet should run away
     const dayInMs = 86400000;
@@ -187,17 +189,24 @@ export class PetService {
     );
 
     if (
-      pet.hunger <= 0 ||
-      pet.thirst <= 0 ||
-      pet.happiness <= 0 ||
+      currentHunger <= 0 ||
+      currentThirst <= 0 ||
+      currentHappiness <= 0 ||
       now - maxLastInteraction > 14 * dayInMs
     ) {
+      // Only save to DB when pet actually runs away
+      pet.hunger = currentHunger;
+      pet.thirst = currentThirst;
+      pet.happiness = currentHappiness;
       pet.ranAwayAt = new Date();
+      await this.petsRepo.save(pet);
       this.petGateway.notifyPetRanAway(pet.userId, pet.id);
     } else {
-      this.petGateway.notifyPetStatsUpdate(pet.userId, pet);
+      // Set calculated values on the entity for the response,
+      // but do NOT save to DB — keeps base values intact
+      pet.hunger = currentHunger;
+      pet.thirst = currentThirst;
+      pet.happiness = currentHappiness;
     }
-
-    await this.petsRepo.save(pet);
   }
 }
