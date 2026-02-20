@@ -12,6 +12,21 @@ import { FarmSkeleton } from "@/components/ui/loading-skeleton";
 import { zonesApi } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 
+import zoneBiology from "@/assets/zone-biology.png";
+import zoneChemistry from "@/assets/zone-chemistry.png";
+import zonePhysics from "@/assets/zone-physics.png";
+import zoneMath from "@/assets/zone-math.png";
+import zoneIt from "@/assets/zone-it.png";
+
+const ZONE_IMAGES: Record<string, string> = {
+  biology: zoneBiology,
+  chemistry: zoneChemistry,
+  physics: zonePhysics,
+  mathematics: zoneMath,
+  math: zoneMath,
+  it: zoneIt,
+};
+
 interface FarmZone {
   id: string;
   name: string;
@@ -155,7 +170,7 @@ const Farm = () => {
                 <div className="space-y-4">
                   <div className="w-full h-32 bg-accent/20 rounded-lg flex items-center justify-center overflow-hidden">
                     <img 
-                      src={zone.iconUrl} 
+                      src={ZONE_IMAGES[zone.zoneType] || zone.iconUrl} 
                       alt={zone.name}
                       className="w-24 h-24 object-contain group-hover:scale-110 transition-transform"
                     />
