@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { Socket } from 'socket.io-client';
 import { useToast } from '@/hooks/use-toast';
 import { websocketManager } from './websocketManager';
@@ -29,18 +29,30 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
   const wasDisconnectedRef = useRef(false);
   const isInitialMountRef = useRef(true);
   const configRef = useRef(config);
+  const toastRef = useRef(toast);
   const unsubscribeRefs = useRef<Array<() => void>>([]);
 
-  // Update config ref when it changes
+  // Update refs when values change (no effect re-runs)
   useEffect(() => {
     configRef.current = config;
   }, [config]);
 
-  const showToast = useMemo(() => config.enableToasts !== false, [config.enableToasts]);
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
+
+  const showToast = config.enableToasts !== false;
+  const showToastRef = useRef(showToast);
+  useEffect(() => {
+    showToastRef.current = showToast;
+  }, [showToast]);
+
+  // Stable userId for effect dependency
+  const userId = config.userId;
 
   useEffect(() => {
-    const userId = configRef.current.userId;
-    
+    if (!userId) return;
+
     // Connect to WebSocket manager (singleton - only one connection per user)
     websocketManager.connect(userId);
     
@@ -52,8 +64,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
       setIsConnected(websocketManager.isConnected());
       setConnectionError(null);
       
-      if (wasDisconnectedRef.current && !isInitialMountRef.current && showToast) {
-        toast({
+      if (wasDisconnectedRef.current && !isInitialMountRef.current && showToastRef.current) {
+        toastRef.current({
           title: '✅ Подключено',
           description: 'WebSocket соединение восстановлено',
         });
@@ -95,8 +107,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
 
     const unsubscribePlantHarvested = websocketManager.on('plant:harvested', (data: any) => {
       configRef.current.onPlantHarvested?.(data);
-      if (showToast) {
-        toast({
+      if (showToastRef.current) {
+        toastRef.current({
           title: '🌾 Урожай собран!',
           description: `Вы собрали ${data.item?.name || 'урожай'}`,
         });
@@ -109,8 +121,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
 
     const unsubscribeAnimalCollected = websocketManager.on('animal:collected', (data: any) => {
       configRef.current.onAnimalCollected?.(data);
-      if (showToast) {
-        toast({
+      if (showToastRef.current) {
+        toastRef.current({
           title: '🥚 Продукт собран!',
           description: `Вы собрали ${data.item?.name || 'продукт'}`,
         });
@@ -119,8 +131,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
 
     const unsubscribeProductionStarted = websocketManager.on('production:started', (production: any) => {
       configRef.current.onProductionStarted?.(production);
-      if (showToast) {
-        toast({
+      if (showToastRef.current) {
+        toastRef.current({
           title: '⚙️ Производство начато',
           description: `Производство ${production.chainName || ''} началось`,
         });
@@ -129,8 +141,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
 
     const unsubscribeProductionCompleted = websocketManager.on('production:completed', (data: any) => {
       configRef.current.onProductionCompleted?.(data);
-      if (showToast) {
-        toast({
+      if (showToastRef.current) {
+        toastRef.current({
           title: '✅ Производство завершено!',
           description: `Готово: ${data.item?.name || 'продукт'}`,
         });
@@ -144,8 +156,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
     // Subscribe to pet events
     const unsubscribePetCreated = websocketManager.on('pet:created', (pet: any) => {
       configRef.current.onPetCreated?.(pet);
-      if (showToast) {
-        toast({
+      if (showToastRef.current) {
+        toastRef.current({
           title: '🐾 Питомец создан!',
           description: `Добро пожаловать, ${pet.name || 'питомец'}!`,
         });
@@ -158,8 +170,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
 
     const unsubscribePetFed = websocketManager.on('pet:fed', (pet: any) => {
       configRef.current.onPetFed?.(pet);
-      if (showToast) {
-        toast({
+      if (showToastRef.current) {
+        toastRef.current({
           title: '🍖 Питомец накормлен',
           description: `${pet.name || 'Питомец'} доволен!`,
         });
@@ -168,8 +180,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
 
     const unsubscribePetWatered = websocketManager.on('pet:watered', (pet: any) => {
       configRef.current.onPetWatered?.(pet);
-      if (showToast) {
-        toast({
+      if (showToastRef.current) {
+        toastRef.current({
           title: '💧 Питомец напоен',
           description: `${pet.name || 'Питомец'} больше не хочет пить`,
         });
@@ -178,8 +190,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
 
     const unsubscribePetPlayed = websocketManager.on('pet:played', (pet: any) => {
       configRef.current.onPetPlayed?.(pet);
-      if (showToast) {
-        toast({
+      if (showToastRef.current) {
+        toastRef.current({
           title: '🎮 Время игры!',
           description: `${pet.name || 'Питомец'} счастлив`,
         });
@@ -188,8 +200,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
 
     const unsubscribePetItemUsed = websocketManager.on('pet:itemUsed', (data: any) => {
       configRef.current.onPetItemUsed?.(data);
-      if (showToast) {
-        toast({
+      if (showToastRef.current) {
+        toastRef.current({
           title: '✨ Предмет использован',
           description: `${data.item?.name || 'Предмет'} применён на ${data.pet?.name || 'питомца'}`,
         });
@@ -198,8 +210,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
 
     const unsubscribePetRanAway = websocketManager.on('pet:ranAway', (data: any) => {
       configRef.current.onPetRanAway?.(data);
-      if (showToast) {
-        toast({
+      if (showToastRef.current) {
+        toastRef.current({
           title: '😢 Питомец убежал',
           description: 'Ваш питомец покинул вас из-за плохого ухода',
           variant: 'destructive',
@@ -236,7 +248,7 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
       unsubscribeRefs.current.forEach((unsubscribe) => unsubscribe());
       unsubscribeRefs.current = [];
     };
-  }, [config.userId, showToast, toast]);
+  }, [userId]); // Only re-run when userId changes
 
   return {
     isConnected,
