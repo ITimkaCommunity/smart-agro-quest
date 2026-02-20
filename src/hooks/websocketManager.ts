@@ -64,7 +64,7 @@ class WebSocketManager {
     }
 
     // Farm Socket
-    if (!this.farmSocket || (!this.farmSocket.connected && !this.farmSocket.connecting)) {
+    if (!this.farmSocket || (!this.farmSocket.connected && !(this.farmSocket as any).connecting)) {
       if (this.farmSocket) {
         this.farmSocket.removeAllListeners();
         this.farmSocket.disconnect();
@@ -83,7 +83,7 @@ class WebSocketManager {
     }
 
     // Pet Socket
-    if (!this.petSocket || (!this.petSocket.connected && !this.petSocket.connecting)) {
+    if (!this.petSocket || (!this.petSocket.connected && !(this.petSocket as any).connecting)) {
       if (this.petSocket) {
         this.petSocket.removeAllListeners();
         this.petSocket.disconnect();
