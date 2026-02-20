@@ -55,7 +55,14 @@ async function apiRequest<T>(
     throw new Error(errorMessage);
   }
 
-  return response.json();
+  const text = await response.text();
+  if (!text) return null as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    console.warn('[API] Failed to parse JSON response:', text.substring(0, 100));
+    return null as T;
+  }
 }
 
 // Auth API
