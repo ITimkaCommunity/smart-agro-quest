@@ -69,7 +69,7 @@ export class PetService {
   }
 
   async feedPet(userId: string): Promise<Pet> {
-    const pet = await this.getPetOrThrow(userId);
+    const pet = await this.getPetForAction(userId);
 
     pet.hunger = Math.min(100, pet.hunger + 30);
     pet.lastFedAt = new Date();
@@ -81,7 +81,7 @@ export class PetService {
   }
 
   async waterPet(userId: string): Promise<Pet> {
-    const pet = await this.getPetOrThrow(userId);
+    const pet = await this.getPetForAction(userId);
 
     pet.thirst = Math.min(100, pet.thirst + 30);
     pet.lastWateredAt = new Date();
@@ -93,7 +93,7 @@ export class PetService {
   }
 
   async playWithPet(userId: string): Promise<Pet> {
-    const pet = await this.getPetOrThrow(userId);
+    const pet = await this.getPetForAction(userId);
 
     pet.happiness = Math.min(100, pet.happiness + 20);
     pet.lastPlayedAt = new Date();
@@ -105,7 +105,7 @@ export class PetService {
   }
 
   async useItemOnPet(userId: string, useItemDto: UseItemDto): Promise<Pet> {
-    const pet = await this.getPetOrThrow(userId);
+    const pet = await this.getPetForAction(userId);
 
     // Check if user has the item
     const userItem = await this.userItemsRepo.findOne({
@@ -149,8 +149,10 @@ export class PetService {
     });
   }
 
-  private async getPetOrThrow(userId: string): Promise<Pet> {
-    const pet = await this.getUserPet(userId);
+  private async getPetForAction(userId: string): Promise<Pet> {
+    const pet = await this.petsRepo.findOne({
+      where: { userId, ranAwayAt: null as any },
+    });
     if (!pet) {
       throw new NotFoundException('Pet not found');
     }
