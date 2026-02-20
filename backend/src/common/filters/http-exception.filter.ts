@@ -22,16 +22,37 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : 'Internal server error';
+    let message: any;
+    if (exception instanceof HttpException) {
+      const response = exception.getResponse();
+      // Handle validation errors (array of constraints)
+      if (typeof response === 'object' && response !== null) {
+        const resp = response as any;
+        if (Array.isArray(resp.message)) {
+          // ValidationPipe returns array of error messages
+          message = resp.message.join(', ');
+        } else if (resp.message) {
+          message = resp.message;
+        } else {
+          message = resp;
+        }
+      } else {
+        message = response;
+      }
+    } else {
+      message = 'Internal server error';
+    }
 
-    // Log error details
+    // Log error details with request body for debugging
     this.logger.error(
       `${request.method} ${request.url} - Status: ${status}`,
       exception instanceof Error ? exception.stack : 'Unknown error',
     );
+    
+    // Log request body for POST/PUT/PATCH requests to help debug validation errors
+    if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
+      this.logger.debug(`Request body: ${JSON.stringify(request.body)}`);
+    }
 
     // Don't expose internal error details in production
     const errorResponse = {

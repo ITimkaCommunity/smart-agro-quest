@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { Socket } from 'socket.io-client';
 import { useToast } from '@/hooks/use-toast';
+import { websocketManager } from './websocketManager';
 
 interface RealtimeConfig {
   userId: string | null;
@@ -21,115 +22,79 @@ interface RealtimeConfig {
   enableToasts?: boolean;
 }
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
-const MAX_RECONNECT_ATTEMPTS = 5;
-const BASE_RECONNECT_DELAY = 1000; // 1 second
-
 export function useRealtimeUpdates(config: RealtimeConfig) {
   const { toast } = useToast();
-  const farmSocketRef = useRef<Socket | null>(null);
-  const petSocketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
-  const [reconnectAttempts, setReconnectAttempts] = useState(0);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const wasDisconnectedRef = useRef(false);
+  const isInitialMountRef = useRef(true);
+  const configRef = useRef(config);
+  const unsubscribeRefs = useRef<Array<() => void>>([]);
 
-  const showToast = config.enableToasts !== false;
+  // Update config ref when it changes
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
 
-  const calculateReconnectDelay = useCallback((attempt: number) => {
-    // Exponential backoff: 1s, 2s, 4s, 8s, 16s
-    return Math.min(BASE_RECONNECT_DELAY * Math.pow(2, attempt), 30000);
-  }, []);
-
-  const attemptReconnect = useCallback(() => {
-    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-      setConnectionError('Не удалось подключиться к серверу');
-      if (showToast) {
-        toast({
-          title: '❌ Ошибка подключения',
-          description: 'Не удалось установить WebSocket соединение. Проверьте подключение к интернету.',
-          variant: 'destructive',
-        });
-      }
-      return;
-    }
-
-    const delay = calculateReconnectDelay(reconnectAttempts);
-    console.log(`[WebSocket] Попытка переподключения через ${delay}ms (попытка ${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`);
-
-    reconnectTimeoutRef.current = setTimeout(() => {
-      setReconnectAttempts(prev => prev + 1);
-      // The useEffect will handle reconnection when reconnectAttempts changes
-    }, delay);
-  }, [reconnectAttempts, calculateReconnectDelay, showToast, toast]);
+  const showToast = useMemo(() => config.enableToasts !== false, [config.enableToasts]);
 
   useEffect(() => {
-    if (!config.userId) return;
+    const userId = configRef.current.userId;
+    
+    // Connect to WebSocket manager (singleton - only one connection per user)
+    websocketManager.connect(userId);
+    
+    // Update connection state
+    setIsConnected(websocketManager.isConnected());
 
-    // Development logging
-    const isDev = import.meta.env.DEV;
-    const log = (namespace: string, event: string, data?: any) => {
-      if (isDev) {
-        console.log(`[WebSocket:${namespace}] ${event}`, data);
-      }
-    };
-
-    // Get JWT token from localStorage
-    const token = localStorage.getItem('auth_token');
-
-    // Farm Socket
-    const farmSocket = io(`${BACKEND_URL}/farm`, {
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
-      auth: {
-        token: token,
-      },
-    });
-
-    farmSocketRef.current = farmSocket;
-
-    farmSocket.on('connect', () => {
-      log('farm', 'Connected', { socketId: farmSocket.id });
-      farmSocket.emit('joinUserRoom', config.userId);
-      setIsConnected(true);
+    // Subscribe to connection events
+    const unsubscribeFarmConnected = websocketManager.on('farm:connected', () => {
+      setIsConnected(websocketManager.isConnected());
       setConnectionError(null);
-      setReconnectAttempts(0); // Reset on successful connection
       
-      if (reconnectAttempts > 0 && showToast) {
+      if (wasDisconnectedRef.current && !isInitialMountRef.current && showToast) {
         toast({
           title: '✅ Подключено',
           description: 'WebSocket соединение восстановлено',
         });
       }
+      
+      wasDisconnectedRef.current = false;
+      isInitialMountRef.current = false;
     });
 
-    farmSocket.on('disconnect', (reason) => {
-      log('farm', 'Disconnected', { reason });
-      setIsConnected(false);
-      
-      // Only attempt reconnect for certain disconnect reasons
+    const unsubscribeFarmDisconnected = websocketManager.on('farm:disconnected', (reason: string) => {
+      setIsConnected(websocketManager.isConnected());
+      wasDisconnectedRef.current = true;
       if (reason === 'io server disconnect' || reason === 'transport close') {
-        attemptReconnect();
+        setConnectionError('Соединение разорвано. Переподключение...');
       }
     });
 
-    farmSocket.on('connect_error', (error) => {
-      log('farm', 'Connection Error', error);
+    const unsubscribeFarmError = websocketManager.on('farm:error', (error: any) => {
       setConnectionError(error.message);
-      attemptReconnect();
+      wasDisconnectedRef.current = true;
     });
 
-    // Plant events
-    farmSocket.on('plant:updated', (plant) => {
-      log('farm', 'plant:updated', plant);
-      config.onPlantUpdate?.(plant);
+    const unsubscribePetConnected = websocketManager.on('pet:connected', () => {
+      setIsConnected(websocketManager.isConnected());
     });
 
-    farmSocket.on('plant:harvested', (data) => {
-      log('farm', 'plant:harvested', data);
-      config.onPlantHarvested?.(data);
+    const unsubscribePetDisconnected = websocketManager.on('pet:disconnected', () => {
+      setIsConnected(websocketManager.isConnected());
+    });
+
+    const unsubscribePetError = websocketManager.on('pet:error', (error: any) => {
+      setConnectionError(error.message);
+    });
+
+    // Subscribe to farm events
+    const unsubscribePlantUpdated = websocketManager.on('plant:updated', (plant: any) => {
+      configRef.current.onPlantUpdate?.(plant);
+    });
+
+    const unsubscribePlantHarvested = websocketManager.on('plant:harvested', (data: any) => {
+      configRef.current.onPlantHarvested?.(data);
       if (showToast) {
         toast({
           title: '🌾 Урожай собран!',
@@ -138,15 +103,12 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
       }
     });
 
-    // Animal events
-    farmSocket.on('animal:updated', (animal) => {
-      log('farm', 'animal:updated', animal);
-      config.onAnimalUpdate?.(animal);
+    const unsubscribeAnimalUpdated = websocketManager.on('animal:updated', (animal: any) => {
+      configRef.current.onAnimalUpdate?.(animal);
     });
 
-    farmSocket.on('animal:collected', (data) => {
-      log('farm', 'animal:collected', data);
-      config.onAnimalCollected?.(data);
+    const unsubscribeAnimalCollected = websocketManager.on('animal:collected', (data: any) => {
+      configRef.current.onAnimalCollected?.(data);
       if (showToast) {
         toast({
           title: '🥚 Продукт собран!',
@@ -155,10 +117,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
       }
     });
 
-    // Production events
-    farmSocket.on('production:started', (production) => {
-      log('farm', 'production:started', production);
-      config.onProductionStarted?.(production);
+    const unsubscribeProductionStarted = websocketManager.on('production:started', (production: any) => {
+      configRef.current.onProductionStarted?.(production);
       if (showToast) {
         toast({
           title: '⚙️ Производство начато',
@@ -167,9 +127,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
       }
     });
 
-    farmSocket.on('production:completed', (data) => {
-      log('farm', 'production:completed', data);
-      config.onProductionCompleted?.(data);
+    const unsubscribeProductionCompleted = websocketManager.on('production:completed', (data: any) => {
+      configRef.current.onProductionCompleted?.(data);
       if (showToast) {
         toast({
           title: '✅ Производство завершено!',
@@ -178,42 +137,13 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
       }
     });
 
-    // Inventory events
-    farmSocket.on('inventory:updated', (inventory) => {
-      log('farm', 'inventory:updated', inventory);
-      config.onInventoryUpdate?.(inventory);
+    const unsubscribeInventoryUpdated = websocketManager.on('inventory:updated', (inventory: any) => {
+      configRef.current.onInventoryUpdate?.(inventory);
     });
 
-    // Pet Socket
-    const petSocket = io(`${BACKEND_URL}/pet`, {
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
-      auth: {
-        token: token,
-      },
-    });
-
-    petSocketRef.current = petSocket;
-
-    petSocket.on('connect', () => {
-      log('pet', 'Connected', { socketId: petSocket.id });
-      petSocket.emit('joinUserRoom', config.userId);
-    });
-
-    petSocket.on('disconnect', () => {
-      log('pet', 'Disconnected');
-    });
-
-    petSocket.on('connect_error', (error) => {
-      log('pet', 'Connection Error', error);
-    });
-
-    // Pet events
-    petSocket.on('pet:created', (pet) => {
-      log('pet', 'pet:created', pet);
-      config.onPetCreated?.(pet);
+    // Subscribe to pet events
+    const unsubscribePetCreated = websocketManager.on('pet:created', (pet: any) => {
+      configRef.current.onPetCreated?.(pet);
       if (showToast) {
         toast({
           title: '🐾 Питомец создан!',
@@ -222,14 +152,12 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
       }
     });
 
-    petSocket.on('pet:statsUpdated', (pet) => {
-      log('pet', 'pet:statsUpdated', pet);
-      config.onPetStatsUpdate?.(pet);
+    const unsubscribePetStatsUpdated = websocketManager.on('pet:statsUpdated', (pet: any) => {
+      configRef.current.onPetStatsUpdate?.(pet);
     });
 
-    petSocket.on('pet:fed', (pet) => {
-      log('pet', 'pet:fed', pet);
-      config.onPetFed?.(pet);
+    const unsubscribePetFed = websocketManager.on('pet:fed', (pet: any) => {
+      configRef.current.onPetFed?.(pet);
       if (showToast) {
         toast({
           title: '🍖 Питомец накормлен',
@@ -238,9 +166,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
       }
     });
 
-    petSocket.on('pet:watered', (pet) => {
-      log('pet', 'pet:watered', pet);
-      config.onPetWatered?.(pet);
+    const unsubscribePetWatered = websocketManager.on('pet:watered', (pet: any) => {
+      configRef.current.onPetWatered?.(pet);
       if (showToast) {
         toast({
           title: '💧 Питомец напоен',
@@ -249,9 +176,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
       }
     });
 
-    petSocket.on('pet:played', (pet) => {
-      log('pet', 'pet:played', pet);
-      config.onPetPlayed?.(pet);
+    const unsubscribePetPlayed = websocketManager.on('pet:played', (pet: any) => {
+      configRef.current.onPetPlayed?.(pet);
       if (showToast) {
         toast({
           title: '🎮 Время игры!',
@@ -260,9 +186,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
       }
     });
 
-    petSocket.on('pet:itemUsed', (data) => {
-      log('pet', 'pet:itemUsed', data);
-      config.onPetItemUsed?.(data);
+    const unsubscribePetItemUsed = websocketManager.on('pet:itemUsed', (data: any) => {
+      configRef.current.onPetItemUsed?.(data);
       if (showToast) {
         toast({
           title: '✨ Предмет использован',
@@ -271,9 +196,8 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
       }
     });
 
-    petSocket.on('pet:ranAway', (data) => {
-      log('pet', 'pet:ranAway', data);
-      config.onPetRanAway?.(data);
+    const unsubscribePetRanAway = websocketManager.on('pet:ranAway', (data: any) => {
+      configRef.current.onPetRanAway?.(data);
       if (showToast) {
         toast({
           title: '😢 Питомец убежал',
@@ -283,22 +207,41 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
       }
     });
 
+    // Store all unsubscribe functions
+    unsubscribeRefs.current = [
+      unsubscribeFarmConnected,
+      unsubscribeFarmDisconnected,
+      unsubscribeFarmError,
+      unsubscribePetConnected,
+      unsubscribePetDisconnected,
+      unsubscribePetError,
+      unsubscribePlantUpdated,
+      unsubscribePlantHarvested,
+      unsubscribeAnimalUpdated,
+      unsubscribeAnimalCollected,
+      unsubscribeProductionStarted,
+      unsubscribeProductionCompleted,
+      unsubscribeInventoryUpdated,
+      unsubscribePetCreated,
+      unsubscribePetStatsUpdated,
+      unsubscribePetFed,
+      unsubscribePetWatered,
+      unsubscribePetPlayed,
+      unsubscribePetItemUsed,
+      unsubscribePetRanAway,
+    ];
+
     return () => {
-      log('farm', 'Cleaning up connections');
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      farmSocket.disconnect();
-      petSocket.disconnect();
-      farmSocketRef.current = null;
-      petSocketRef.current = null;
+      // Unsubscribe from all events (but don't disconnect - other components might be using it)
+      unsubscribeRefs.current.forEach((unsubscribe) => unsubscribe());
+      unsubscribeRefs.current = [];
     };
-  }, [config.userId, showToast, reconnectAttempts, attemptReconnect]);
+  }, [config.userId, showToast, toast]);
 
   return {
     isConnected,
     connectionError,
-    farmSocket: farmSocketRef.current,
-    petSocket: petSocketRef.current,
+    farmSocket: websocketManager.getFarmSocket(),
+    petSocket: websocketManager.getPetSocket(),
   };
 }

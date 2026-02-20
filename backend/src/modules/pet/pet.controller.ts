@@ -31,6 +31,7 @@ export class PetController {
     @CurrentUser('id') userId: string,
     @Body() createPetDto: CreatePetDto,
   ) {
+    console.log('[PetController] createPet called:', { userId, createPetDto });
     return this.petService.createPet(userId, createPetDto);
   }
 

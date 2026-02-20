@@ -35,9 +35,13 @@ export class PetService {
   }
 
   async createPet(userId: string, createPetDto: CreatePetDto): Promise<Pet> {
+    console.log('[PetService] createPet called:', { userId, createPetDto });
+    
     // Check if user already has a pet
     const existingPet = await this.getUserPet(userId);
+    console.log('[PetService] Existing pet check:', existingPet ? 'exists' : 'not found');
     if (existingPet) {
+      console.log('[PetService] User already has a pet, throwing BadRequestException');
       throw new BadRequestException('User already has a pet');
     }
 

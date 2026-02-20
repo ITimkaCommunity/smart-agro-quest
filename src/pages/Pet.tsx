@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/layout/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,18 +20,60 @@ const Pet = () => {
 
   const { pet, loading, createPet: createPetApi, feedPet, waterPet, playWithPet, refreshPet } = usePetApi();
   const { shouldShowToast } = useNotificationSettings();
+  
+  // Memoize enableToasts to prevent recreating config object
+  const enableToasts = useMemo(() => shouldShowToast('pet'), [shouldShowToast]);
+
+  // Track last update time to prevent rapid refreshes
+  const lastUpdateRef = useRef<number>(0);
+  const UPDATE_THROTTLE_MS = 2000; // Minimum time between updates (increased to 2 seconds)
 
   // WebSocket real-time updates
-  const { isConnected, connectionError } = useRealtimeUpdates({
+  // Use useCallback to prevent recreating callbacks on every render
+  const handlePetCreated = useCallback((petData: any) => {
+    console.log('[Pet] WebSocket pet:created event received:', petData?.id);
+    const now = Date.now();
+    // Throttle updates - don't refresh if we just refreshed recently
+    if (now - lastUpdateRef.current < UPDATE_THROTTLE_MS) {
+      console.log('[Pet] Throttling pet:created update, last update was', now - lastUpdateRef.current, 'ms ago');
+      return;
+    }
+    lastUpdateRef.current = now;
+    // Refresh when pet is created via WebSocket
+    console.log('[Pet] Calling refreshPet after pet:created event');
+    refreshPet();
+  }, [refreshPet]);
+
+  const handlePetUpdate = useCallback(() => {
+    // Only refresh if we have a pet (to avoid unnecessary calls when pet doesn't exist)
+    if (!pet) {
+      console.log('[Pet] No pet exists, skipping update');
+      return;
+    }
+    const now = Date.now();
+    // Throttle updates - don't refresh if we just refreshed recently
+    if (now - lastUpdateRef.current < UPDATE_THROTTLE_MS) {
+      console.log('[Pet] Throttling pet update, last update was', now - lastUpdateRef.current, 'ms ago');
+      return;
+    }
+    lastUpdateRef.current = now;
+    console.log('[Pet] Calling refreshPet after pet update event');
+    refreshPet();
+  }, [pet, refreshPet]);
+
+  // Memoize the config object to prevent recreating useRealtimeUpdates
+  const realtimeConfig = useMemo(() => ({
     userId: user?.id || null,
-    enableToasts: shouldShowToast('pet'),
-    onPetCreated: refreshPet,
-    onPetStatsUpdate: refreshPet,
-    onPetFed: refreshPet,
-    onPetWatered: refreshPet,
-    onPetPlayed: refreshPet,
-    onPetRanAway: refreshPet,
-  });
+    enableToasts,
+    onPetCreated: handlePetCreated,
+    onPetStatsUpdate: handlePetUpdate,
+    onPetFed: handlePetUpdate,
+    onPetWatered: handlePetUpdate,
+    onPetPlayed: handlePetUpdate,
+    onPetRanAway: handlePetUpdate,
+  }), [user?.id, enableToasts, handlePetCreated, handlePetUpdate]);
+
+  const { isConnected, connectionError } = useRealtimeUpdates(realtimeConfig);
 
   const petTypes = [
     { type: "cow" as const, emoji: "🐄", name: "Корова" },
@@ -40,12 +82,28 @@ const Pet = () => {
   ];
 
 
-  const handleCreatePet = async () => {
+  const handleCreatePet = useCallback(async () => {
     if (!petName.trim() || !selectedType) return;
-    await createPetApi(petName.trim(), selectedType);
-    setPetName("");
-    setSelectedType(null);
-  };
+    
+    // Prevent double submission
+    if (loading) {
+      return;
+    }
+
+    try {
+      console.log('[Pet] Creating pet via API');
+      await createPetApi(petName.trim(), selectedType);
+      console.log('[Pet] Pet creation API call completed, waiting for WebSocket event');
+      // Clear form immediately after API call succeeds
+      // WebSocket event will handle state update
+      setPetName("");
+      setSelectedType(null);
+    } catch (error: any) {
+      // Error already handled in createPetApi
+      console.error('[Pet] Failed to create pet:', error);
+      // Don't clear form on error so user can retry
+    }
+  }, [petName, selectedType, createPetApi, loading]);
 
   const getHealthStatus = () => {
     if (!pet || pet.ranAwayAt) return { text: "Сбежал", color: "bg-gray-500" };
@@ -90,7 +148,7 @@ const Pet = () => {
             </div>
           </div>
 
-          {!pet || pet.ranAwayAt ? (
+          {(!pet || pet.ranAwayAt) && !loading ? (
             <Card>
               <CardHeader>
                 <CardTitle>
@@ -112,19 +170,34 @@ const Pet = () => {
                       value={petName}
                       onChange={(e) => setPetName(e.target.value)}
                       maxLength={20}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && petName.trim() && selectedType) {
+                          handleCreatePet();
+                        }
+                      }}
                     />
                   </div>
                   
                   <div>
-                    <Label>Выберите тип</Label>
-                    <div className="grid grid-cols-3 gap-4 mt-2">
+                    <Label htmlFor="petType">Выберите тип</Label>
+                    <div className="grid grid-cols-3 gap-4 mt-2" role="radiogroup" aria-labelledby="petType">
                       {petTypes.map((petType) => (
                         <Card 
                           key={petType.type}
+                          id={`petType-${petType.type}`}
+                          role="radio"
+                          aria-checked={selectedType === petType.type}
                           className={`cursor-pointer hover:bg-accent transition-colors text-center p-6 ${
                             selectedType === petType.type ? 'ring-2 ring-primary' : ''
                           }`}
                           onClick={() => setSelectedType(petType.type)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setSelectedType(petType.type);
+                            }
+                          }}
+                          tabIndex={0}
                         >
                           <span className="text-4xl block mb-2">{petType.emoji}</span>
                           <p className="text-sm font-medium">{petType.name}</p>
@@ -133,8 +206,12 @@ const Pet = () => {
                     </div>
                   </div>
 
-                  <Button onClick={handleCreatePet} className="w-full" disabled={!petName.trim() || !selectedType}>
-                    Создать питомца
+                  <Button 
+                    onClick={handleCreatePet} 
+                    className="w-full" 
+                    disabled={!petName.trim() || !selectedType || loading}
+                  >
+                    {loading ? 'Создание...' : 'Создать питомца'}
                   </Button>
                 </div>
               </CardContent>

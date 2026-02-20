@@ -19,14 +19,40 @@ async function apiRequest<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+  const url = `${BACKEND_URL}${endpoint}`;
+  console.log(`[API] ${options.method || 'GET'} ${url}`, {
+    headers: { ...headers, Authorization: token ? 'Bearer ***' : 'none' },
+    body: options.body,
+  });
+
+  const response = await fetch(url, {
     ...options,
     headers,
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Unknown error" }));
-    throw new Error(error.message || "API request failed");
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { message: "Unknown error" };
+    }
+    
+    console.error(`[API] Request failed: ${endpoint}`, {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorData,
+      requestBody: options.body ? JSON.parse(options.body) : undefined,
+    });
+    
+    // Extract error message from different possible formats
+    const errorMessage = 
+      errorData.message || 
+      errorData.error || 
+      (Array.isArray(errorData) ? errorData.map((e: any) => e.message || e).join(', ') : null) ||
+      "API request failed";
+    
+    throw new Error(errorMessage);
   }
 
   return response.json();
@@ -76,8 +102,12 @@ export const farmApi = {
 // Pet API
 export const petApi = {
   getUserPet: () => apiRequest<any>("/pet"),
-  createPet: (data: { name: string; type: string }) => 
-    apiRequest("/pet", { method: "POST", body: JSON.stringify(data) }),
+  createPet: (data: { name: string; type: string }) => {
+    console.log('[petApi] createPet called with data:', data);
+    const body = JSON.stringify(data);
+    console.log('[petApi] Request body:', body);
+    return apiRequest("/pet", { method: "POST", body });
+  },
   feedPet: () => apiRequest("/pet/feed", { method: "POST" }),
   waterPet: () => apiRequest("/pet/water", { method: "POST" }),
   playWithPet: () => apiRequest("/pet/play", { method: "POST" }),
