@@ -85,17 +85,17 @@ export class TasksController {
     return this.tasksService.submitTask(taskId, userId, createSubmissionDto);
   }
 
+  @Get('user/submissions')
+  @ApiOperation({ summary: 'Get current user submissions' })
+  getUserSubmissions(@CurrentUser('id') userId: string) {
+    return this.tasksService.getUserSubmissions(userId);
+  }
+
   @Get(':id/submissions')
   @Roles(UserRole.TEACHER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all submissions for a task' })
   getSubmissions(@Param('id') taskId: string) {
     return this.tasksService.getSubmissions(taskId);
-  }
-
-  @Get('user/submissions')
-  @ApiOperation({ summary: 'Get current user submissions' })
-  getUserSubmissions(@CurrentUser('id') userId: string) {
-    return this.tasksService.getUserSubmissions(userId);
   }
 
   @Get('submissions/:id')
