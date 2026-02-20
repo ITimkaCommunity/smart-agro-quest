@@ -26,7 +26,8 @@ export const usePetApi = () => {
 
   useEffect(() => {
     loadPet();
-  }, [loadPet]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadPet = useCallback(async (skipLoadingState = false) => {
     // Clear any pending refresh timeout
@@ -112,7 +113,7 @@ export const usePetApi = () => {
     try {
       console.log('[usePetApi] Creating pet:', { name, type });
       const data = await petApi.createPet({ name, type });
-      console.log('[usePetApi] Pet created successfully, data:', data?.id);
+      console.log('[usePetApi] Pet created successfully, data:', (data as any)?.id);
       
       // Update state immediately for instant feedback
       // WebSocket event will also arrive, but throttling will prevent duplicate refresh

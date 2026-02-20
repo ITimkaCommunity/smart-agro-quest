@@ -42,7 +42,7 @@ async function apiRequest<T>(
       status: response.status,
       statusText: response.statusText,
       error: errorData,
-      requestBody: options.body ? JSON.parse(options.body) : undefined,
+      requestBody: options.body && typeof options.body === 'string' ? JSON.parse(options.body) : undefined,
     });
     
     // Extract error message from different possible formats
