@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, User, LogOut, Settings as SettingsIcon, Shield } from "lucide-react";
+import { Menu, User, LogOut, Settings as SettingsIcon, Shield, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -145,6 +145,14 @@ const Header = ({ isWebSocketConnected = false, connectionError = null }: Header
                 >
                   Задания
                 </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate("/achievements")}
+                  className="text-sm font-medium"
+                >
+                  <Trophy className="mr-1 h-4 w-4" />
+                  Достижения
+                </Button>
               </>
             )}
           </nav>
@@ -222,6 +230,10 @@ const Header = ({ isWebSocketConnected = false, connectionError = null }: Header
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/tasks")}>
                       Задания
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/achievements")}>
+                      <Trophy className="h-4 w-4 mr-2" />
+                      Достижения
                     </DropdownMenuItem>
                   </>
                 )}
