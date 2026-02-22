@@ -23,9 +23,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
   const tasks = [
     // Biology Zone Tasks
     {
-      title: 'Introduction to Cells',
-      description: 'Learn about the basic structure and function of cells',
-      instructions: 'Study the provided materials about cell organelles and their functions. Answer the quiz questions about mitochondria, nucleus, and cell membrane.',
+      title: 'Введение в клетку',
+      description: 'Изучи строение и функции клеток',
+      instructions: 'Изучи предоставленные материалы об органеллах клетки и их функциях. Ответь на вопросы викторины о митохондриях, ядре и клеточной мембране.',
       zoneId: biologyZone?.id,
       difficulty: 1,
       experienceReward: 100,
@@ -34,9 +34,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
       attachmentUrls: [],
     },
     {
-      title: 'Photosynthesis Process',
-      description: 'Understand how plants convert light energy to chemical energy',
-      instructions: 'Read about photosynthesis and complete the diagram labeling exercise. Explain the role of chlorophyll and the importance of sunlight.',
+      title: 'Процесс фотосинтеза',
+      description: 'Пойми, как растения преобразуют световую энергию в химическую',
+      instructions: 'Прочитай о фотосинтезе и выполни упражнение по подписыванию диаграммы. Объясни роль хлорофилла и значение солнечного света.',
       zoneId: biologyZone?.id,
       difficulty: 2,
       experienceReward: 150,
@@ -45,9 +45,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
       attachmentUrls: [],
     },
     {
-      title: 'Genetics and DNA',
-      description: 'Explore the basics of heredity and genetic information',
-      instructions: 'Complete the Punnett square exercises and answer questions about dominant and recessive traits.',
+      title: 'Генетика и ДНК',
+      description: 'Изучи основы наследственности и генетической информации',
+      instructions: 'Выполни упражнения с решёткой Пеннета и ответь на вопросы о доминантных и рецессивных признаках.',
       zoneId: biologyZone?.id,
       difficulty: 3,
       experienceReward: 200,
@@ -58,9 +58,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
 
     // Chemistry Zone Tasks
     {
-      title: 'Periodic Table Basics',
-      description: 'Learn about elements and their organization',
-      instructions: 'Memorize the first 20 elements of the periodic table. Complete the quiz about atomic numbers and element symbols.',
+      title: 'Основы периодической таблицы',
+      description: 'Изучи элементы и их организацию',
+      instructions: 'Запомни первые 20 элементов периодической таблицы. Пройди тест на знание атомных номеров и символов элементов.',
       zoneId: chemistryZone?.id,
       difficulty: 1,
       experienceReward: 100,
@@ -69,9 +69,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
       attachmentUrls: [],
     },
     {
-      title: 'Chemical Reactions',
-      description: 'Understand how substances interact and transform',
-      instructions: 'Balance chemical equations and identify reaction types (synthesis, decomposition, replacement).',
+      title: 'Химические реакции',
+      description: 'Пойми, как вещества взаимодействуют и трансформируются',
+      instructions: 'Уравняй химические уравнения и определи типы реакций (синтез, разложение, замещение).',
       zoneId: chemistryZone?.id,
       difficulty: 2,
       experienceReward: 150,
@@ -80,9 +80,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
       attachmentUrls: [],
     },
     {
-      title: 'Acids and Bases',
-      description: 'Learn about pH and chemical properties',
-      instructions: 'Conduct virtual experiments with pH indicators and solve problems about acid-base neutralization.',
+      title: 'Кислоты и основания',
+      description: 'Изучи pH и химические свойства',
+      instructions: 'Проведи виртуальные эксперименты с pH-индикаторами и реши задачи на нейтрализацию кислот и оснований.',
       zoneId: chemistryZone?.id,
       difficulty: 3,
       experienceReward: 200,
@@ -93,9 +93,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
 
     // Physics Zone Tasks
     {
-      title: 'Newton\'s Laws of Motion',
-      description: 'Master the fundamental laws of physics',
-      instructions: 'Solve problems involving force, mass, and acceleration. Apply Newton\'s three laws to real-world scenarios.',
+      title: 'Законы Ньютона',
+      description: 'Освой фундаментальные законы физики',
+      instructions: 'Реши задачи на силу, массу и ускорение. Примени три закона Ньютона к реальным ситуациям.',
       zoneId: physicsZone?.id,
       difficulty: 2,
       experienceReward: 150,
@@ -104,9 +104,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
       attachmentUrls: [],
     },
     {
-      title: 'Energy and Work',
-      description: 'Understand energy transformations and work calculations',
-      instructions: 'Calculate kinetic and potential energy in various situations. Solve work and power problems.',
+      title: 'Энергия и работа',
+      description: 'Пойми преобразования энергии и расчёт работы',
+      instructions: 'Рассчитай кинетическую и потенциальную энергию в различных ситуациях. Реши задачи на работу и мощность.',
       zoneId: physicsZone?.id,
       difficulty: 3,
       experienceReward: 200,
@@ -115,9 +115,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
       attachmentUrls: [],
     },
     {
-      title: 'Electricity Basics',
-      description: 'Learn about electric current, voltage, and resistance',
-      instructions: 'Apply Ohm\'s Law to circuit problems. Calculate series and parallel circuit properties.',
+      title: 'Основы электричества',
+      description: 'Изучи электрический ток, напряжение и сопротивление',
+      instructions: 'Примени закон Ома к задачам на цепи. Рассчитай свойства последовательных и параллельных цепей.',
       zoneId: physicsZone?.id,
       difficulty: 4,
       experienceReward: 250,
@@ -128,9 +128,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
 
     // Mathematics Zone Tasks
     {
-      title: 'Algebraic Expressions',
-      description: 'Simplify and solve algebraic equations',
-      instructions: 'Solve linear equations and simplify algebraic expressions. Practice combining like terms.',
+      title: 'Алгебраические выражения',
+      description: 'Упрощай и решай алгебраические уравнения',
+      instructions: 'Реши линейные уравнения и упрости алгебраические выражения. Потренируйся приводить подобные члены.',
       zoneId: mathZone?.id,
       difficulty: 1,
       experienceReward: 100,
@@ -139,9 +139,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
       attachmentUrls: [],
     },
     {
-      title: 'Geometry Fundamentals',
-      description: 'Calculate areas, perimeters, and volumes',
-      instructions: 'Solve geometry problems involving triangles, circles, and rectangles. Apply formulas for area and volume.',
+      title: 'Основы геометрии',
+      description: 'Вычисляй площади, периметры и объёмы',
+      instructions: 'Реши задачи по геометрии с треугольниками, кругами и прямоугольниками. Примени формулы площади и объёма.',
       zoneId: mathZone?.id,
       difficulty: 2,
       experienceReward: 150,
@@ -150,9 +150,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
       attachmentUrls: [],
     },
     {
-      title: 'Functions and Graphs',
-      description: 'Understand mathematical functions and their graphs',
-      instructions: 'Plot linear and quadratic functions. Identify function properties like slope and intercepts.',
+      title: 'Функции и графики',
+      description: 'Разберись в математических функциях и их графиках',
+      instructions: 'Построй линейные и квадратичные функции. Определи свойства функций — наклон и точки пересечения.',
       zoneId: mathZone?.id,
       difficulty: 3,
       experienceReward: 200,
@@ -161,9 +161,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
       attachmentUrls: [],
     },
     {
-      title: 'Probability and Statistics',
-      description: 'Learn to analyze data and calculate probabilities',
-      instructions: 'Calculate mean, median, and mode. Solve probability problems with combinations and permutations.',
+      title: 'Теория вероятностей и статистика',
+      description: 'Научись анализировать данные и вычислять вероятности',
+      instructions: 'Рассчитай среднее арифметическое, медиану и моду. Реши задачи на вероятность с комбинациями и перестановками.',
       zoneId: mathZone?.id,
       difficulty: 4,
       experienceReward: 250,
@@ -174,9 +174,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
 
     // IT Zone Tasks
     {
-      title: 'Introduction to Programming',
-      description: 'Learn basic programming concepts',
-      instructions: 'Write simple programs using variables, loops, and conditions. Complete coding exercises in Python or JavaScript.',
+      title: 'Введение в программирование',
+      description: 'Изучи базовые концепции программирования',
+      instructions: 'Напиши простые программы с переменными, циклами и условиями. Выполни упражнения на Python или JavaScript.',
       zoneId: itZone?.id,
       difficulty: 2,
       experienceReward: 150,
@@ -185,9 +185,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
       attachmentUrls: [],
     },
     {
-      title: 'Data Structures Basics',
-      description: 'Understand arrays, lists, and basic data structures',
-      instructions: 'Implement and manipulate arrays and lists. Solve problems involving data structure operations.',
+      title: 'Основы структур данных',
+      description: 'Разберись в массивах, списках и базовых структурах данных',
+      instructions: 'Реализуй и манипулируй массивами и списками. Реши задачи на операции со структурами данных.',
       zoneId: itZone?.id,
       difficulty: 3,
       experienceReward: 200,
@@ -196,9 +196,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
       attachmentUrls: [],
     },
     {
-      title: 'Algorithms and Problem Solving',
-      description: 'Learn algorithmic thinking and problem-solving strategies',
-      instructions: 'Implement sorting and searching algorithms. Analyze time complexity and optimize solutions.',
+      title: 'Алгоритмы и решение задач',
+      description: 'Научись алгоритмическому мышлению и стратегиям решения задач',
+      instructions: 'Реализуй алгоритмы сортировки и поиска. Проанализируй временную сложность и оптимизируй решения.',
       zoneId: itZone?.id,
       difficulty: 4,
       experienceReward: 250,
@@ -207,9 +207,9 @@ export async function seedTasks(dataSource: DataSource): Promise<void> {
       attachmentUrls: [],
     },
     {
-      title: 'Web Development Fundamentals',
-      description: 'Create basic web pages with HTML and CSS',
-      instructions: 'Build a responsive web page using HTML5 and CSS3. Apply styling and layout techniques.',
+      title: 'Основы веб-разработки',
+      description: 'Создавай базовые веб-страницы с HTML и CSS',
+      instructions: 'Построй адаптивную веб-страницу на HTML5 и CSS3. Примени стилизацию и техники вёрстки.',
       zoneId: itZone?.id,
       difficulty: 3,
       experienceReward: 200,
