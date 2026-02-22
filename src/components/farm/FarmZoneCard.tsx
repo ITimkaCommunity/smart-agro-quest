@@ -25,7 +25,7 @@ const FarmZoneCard = ({
   totalTasks,
 }: FarmZoneCardProps) => {
   return (
-    <Card className={`card-hover relative overflow-hidden ${isLocked ? 'opacity-60' : ''}`}>
+    <Card className={`relative overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:-translate-y-1 cursor-pointer ${isLocked ? 'opacity-60' : ''}`}>
       {isLocked && (
         <div className="absolute top-4 right-4 z-10">
           <div className="bg-muted rounded-full p-2">
@@ -44,11 +44,11 @@ const FarmZoneCard = ({
       </CardHeader>
       
       <CardContent className="space-y-4">
-        <div className="relative h-32 rounded-lg overflow-hidden bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+        <div className="relative h-32 rounded-lg overflow-hidden bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center group">
           <img 
             src={icon} 
             alt={title}
-            className="h-24 w-24 object-contain"
+            className="h-24 w-24 object-contain transition-transform duration-300 group-hover:scale-110"
           />
         </div>
         
