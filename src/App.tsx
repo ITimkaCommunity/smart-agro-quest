@@ -23,6 +23,7 @@ import CreateTask from "./pages/CreateTask";
 import ReviewSubmission from "./pages/ReviewSubmission";
 import StudentDetailStats from "./pages/StudentDetailStats";
 import Settings from "./pages/Settings";
+import Achievements from "./pages/Achievements";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/teacher/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
               <Route path="/teacher/reports" element={<ProtectedRoute><WeeklyReports /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
