@@ -92,7 +92,7 @@ const Dashboard = () => {
             progress: progressPercent,
             tasksCompleted,
             totalTasks: 20,
-            isLocked: !progress?.isUnlocked,
+            isLocked: false,
           };
         }) || [];
 
@@ -252,7 +252,7 @@ const Dashboard = () => {
               <BookOpen className="mr-2 h-4 w-4" />
               Перейти к заданиям
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => navigate("/achievements")}>
               <Trophy className="mr-2 h-4 w-4" />
               Мои достижения
             </Button>
