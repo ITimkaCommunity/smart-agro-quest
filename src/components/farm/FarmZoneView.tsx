@@ -12,6 +12,7 @@ import AnimalSelectionSheet from "./AnimalSelectionSheet";
 import ProductionSelectionSheet from "./ProductionSelectionSheet";
 import { useFarmData } from "@/hooks/useFarmData";
 import { useFarmRealtimeUpdates } from "@/hooks/useFarmRealtimeUpdates";
+import { useAuth } from "@/hooks/useAuth";
 import { farmApi } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -28,7 +29,8 @@ const FarmZoneView = ({
   zoneId,
   onBack
 }: FarmZoneViewProps) => {
-  const [userId, setUserId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const userId = user?.id || null;
   const [plantSheetOpen, setPlantSheetOpen] = useState(false);
   const [animalSheetOpen, setAnimalSheetOpen] = useState(false);
   const [productionSheetOpen, setProductionSheetOpen] = useState(false);
@@ -50,18 +52,6 @@ const FarmZoneView = ({
   const [activeBoosters, setActiveBoosters] = useState<any[]>([]);
   const [boostersLoading, setBoostersLoading] = useState(false);
 
-  useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUserId(payload.sub || payload.userId || null);
-      } catch (error) {
-        console.error('Failed to parse token:', error);
-        setUserId(null);
-      }
-    }
-  }, []);
 
   // Load boosters for booster zones
   useEffect(() => {
