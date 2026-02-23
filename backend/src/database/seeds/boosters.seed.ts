@@ -1,6 +1,32 @@
 import { DataSource } from 'typeorm';
 
 export async function seedBoosters(dataSource: DataSource) {
+  // Ensure table exists
+  await dataSource.query(`
+    CREATE TABLE IF NOT EXISTS zone_boosters (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name TEXT NOT NULL,
+      description TEXT,
+      zone_id UUID NOT NULL REFERENCES farm_zones(id),
+      speed_multiplier NUMERIC DEFAULT 1.0,
+      duration INTEGER NOT NULL,
+      cooldown INTEGER NOT NULL,
+      unlock_achievement_id UUID REFERENCES achievements(id),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `);
+
+  await dataSource.query(`
+    CREATE TABLE IF NOT EXISTS user_active_boosters (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id),
+      booster_id UUID NOT NULL REFERENCES zone_boosters(id),
+      activated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+      can_activate_again_at TIMESTAMP WITH TIME ZONE NOT NULL
+    )
+  `);
+
   // Get zone IDs
   const zones = await dataSource.query('SELECT id, "zoneType" FROM farm_zones');
   const zoneMap: Record<string, string> = {};
