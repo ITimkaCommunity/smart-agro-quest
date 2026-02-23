@@ -104,6 +104,14 @@ export const farmApi = {
     apiRequest("/farm/production", { method: "POST", body: JSON.stringify(data) }),
   collectProduction: (productionId: string) => 
     apiRequest(`/farm/production/${productionId}/collect`, { method: "POST" }),
+
+  // Boosters
+  getZoneBoosters: (zoneId: string) => 
+    apiRequest<any[]>(`/farm/boosters?zoneId=${zoneId}`),
+  getUserActiveBoosters: () => 
+    apiRequest<any[]>(`/farm/boosters/active`),
+  activateBooster: (boosterId: string) => 
+    apiRequest(`/farm/boosters/${boosterId}/activate`, { method: "POST" }),
 };
 
 // Pet API

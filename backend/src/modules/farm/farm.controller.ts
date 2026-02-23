@@ -143,4 +143,26 @@ export class FarmController {
   ) {
     return this.farmService.collectProduction(userId, productionId);
   }
+
+  // Boosters
+  @Get('boosters')
+  @ApiOperation({ summary: 'Get zone boosters' })
+  getZoneBoosters(@Query('zoneId') zoneId: string) {
+    return this.farmService.getZoneBoosters(zoneId);
+  }
+
+  @Get('boosters/active')
+  @ApiOperation({ summary: 'Get user active boosters' })
+  getUserActiveBoosters(@CurrentUser('id') userId: string) {
+    return this.farmService.getUserActiveBoosters(userId);
+  }
+
+  @Post('boosters/:boosterId/activate')
+  @ApiOperation({ summary: 'Activate a booster' })
+  activateBooster(
+    @CurrentUser('id') userId: string,
+    @Param('boosterId') boosterId: string,
+  ) {
+    return this.farmService.activateBooster(userId, boosterId);
+  }
 }
