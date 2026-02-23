@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import { FarmZone } from '../../zones/entities/farm-zone.entity';
 
 @Entity('tasks')
 export class Task {
@@ -22,8 +23,12 @@ export class Task {
   @Column({ type: 'text', nullable: true })
   instructions: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: 'uuid', name: 'zone_id' })
   zoneId: string;
+
+  @ManyToOne(() => FarmZone)
+  @JoinColumn({ name: 'zone_id' })
+  zone: FarmZone;
 
   @Column({ type: 'int', nullable: true })
   difficulty: number;
@@ -48,6 +53,4 @@ export class Task {
 
   @UpdateDateColumn()
   updatedAt: Date;
-
-  zone?: any;
 }
