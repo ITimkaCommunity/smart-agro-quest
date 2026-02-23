@@ -2,10 +2,10 @@ import { DataSource } from 'typeorm';
 
 export async function seedBoosters(dataSource: DataSource) {
   // Get zone IDs
-  const zones = await dataSource.query('SELECT id, zone_type FROM farm_zones');
+  const zones = await dataSource.query('SELECT id, "zoneType" FROM farm_zones');
   const zoneMap: Record<string, string> = {};
   for (const zone of zones) {
-    zoneMap[zone.zone_type] = zone.id;
+    zoneMap[zone.zoneType] = zone.id;
   }
 
   if (!zoneMap.chemistry && !zoneMap.mathematics && !zoneMap.it) {
