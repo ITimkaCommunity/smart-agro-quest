@@ -23,11 +23,11 @@ export class Task {
   @Column({ type: 'text', nullable: true })
   instructions: string;
 
-  @Column({ type: 'uuid', name: 'zone_id' })
+  @Column({ type: 'uuid' })
   zoneId: string;
 
   @ManyToOne(() => FarmZone)
-  @JoinColumn({ name: 'zone_id' })
+  @JoinColumn({ name: 'zoneId' })
   zone: FarmZone;
 
   @Column({ type: 'int', nullable: true })
