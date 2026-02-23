@@ -55,7 +55,7 @@ const FarmZoneView = ({
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        setUserId(payload.userId || null);
+        setUserId(payload.sub || payload.userId || null);
       } catch (error) {
         console.error('Failed to parse token:', error);
         setUserId(null);
