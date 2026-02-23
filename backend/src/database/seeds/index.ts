@@ -5,6 +5,7 @@ import { seedZones } from './zones.seed';
 import { seedFarmItems } from './farm-items.seed';
 import { seedAchievements } from './achievements.seed';
 import { seedTasks } from './tasks.seed';
+import { seedBoosters } from './boosters.seed';
 
 // Load environment variables
 dotenv.config({ path: join(__dirname, '../../.env') });
@@ -42,6 +43,9 @@ async function runSeeds() {
     console.log('\n📚 Seeding tasks...');
     await seedTasks(dataSource);
 
+    console.log('\n⚡ Seeding boosters...');
+    await seedBoosters(dataSource);
+
     console.log('\n✅ All seeds completed successfully!');
     console.log('\n📊 Database Summary:');
     
@@ -50,11 +54,13 @@ async function runSeeds() {
     const itemsCount = await dataSource.getRepository('FarmItem').count();
     const achievementsCount = await dataSource.getRepository('Achievement').count();
     const tasksCount = await dataSource.getRepository('Task').count();
+    const boostersCount = await dataSource.query('SELECT COUNT(*) FROM zone_boosters').then(r => r[0].count);
 
     console.log(`   - Zones: ${zonesCount}`);
     console.log(`   - Farm Items: ${itemsCount}`);
     console.log(`   - Achievements: ${achievementsCount}`);
     console.log(`   - Tasks: ${tasksCount}`);
+    console.log(`   - Boosters: ${boostersCount}`);
     console.log('\n🎉 Seeding process complete!\n');
 
   } catch (error) {

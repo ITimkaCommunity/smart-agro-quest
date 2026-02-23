@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Zap } from "lucide-react";
+import { ArrowLeft, Zap, Timer, Sparkles } from "lucide-react";
 import ProductionSlot from "./ProductionSlot";
 import AnimalSlot from "./AnimalSlot";
 import PlantSlot from "./PlantSlot";
@@ -11,6 +12,8 @@ import AnimalSelectionSheet from "./AnimalSelectionSheet";
 import ProductionSelectionSheet from "./ProductionSelectionSheet";
 import { useFarmData } from "@/hooks/useFarmData";
 import { useFarmRealtimeUpdates } from "@/hooks/useFarmRealtimeUpdates";
+import { farmApi } from "@/lib/api-client";
+import { useToast } from "@/hooks/use-toast";
 
 interface FarmZoneViewProps {
   zoneName: string;
@@ -31,14 +34,21 @@ const FarmZoneView = ({
   const [productionSheetOpen, setProductionSheetOpen] = useState(false);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0);
   
+  const { toast } = useToast();
+  
   // Determine which tabs to show based on zone type
   const showPlants = zoneType === "biology";
   const showAnimals = zoneType === "biology";
   const showProduction = zoneType === "physics";
-  const showBoosters = ["chemistry", "math", "it"].includes(zoneType);
+  const showBoosters = ["chemistry", "mathematics", "math", "it"].includes(zoneType);
 
   const defaultTab = showPlants ? "plants" : showAnimals ? "animals" : showProduction ? "production" : "boosters";
   const [activeTab, setActiveTab] = useState(defaultTab);
+
+  // Boosters state
+  const [boosters, setBoosters] = useState<any[]>([]);
+  const [activeBoosters, setActiveBoosters] = useState<any[]>([]);
+  const [boostersLoading, setBoostersLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -53,6 +63,20 @@ const FarmZoneView = ({
     }
   }, []);
 
+  // Load boosters for booster zones
+  useEffect(() => {
+    if (showBoosters && zoneId) {
+      setBoostersLoading(true);
+      Promise.all([
+        farmApi.getZoneBoosters(zoneId).catch(() => []),
+        userId ? farmApi.getUserActiveBoosters().catch(() => []) : Promise.resolve([]),
+      ]).then(([zoneBoosters, userBoosters]) => {
+        setBoosters(zoneBoosters || []);
+        setActiveBoosters(userBoosters || []);
+      }).finally(() => setBoostersLoading(false));
+    }
+  }, [showBoosters, zoneId, userId]);
+
   const { plants, animals, productions, loading, harvestPlant, collectProduction, collectFromAnimal, refreshData } = useFarmData(zoneId, userId);
   
   // WebSocket real-time updates with visual indicators
@@ -60,6 +84,22 @@ const FarmZoneView = ({
     userId,
     refreshData
   );
+
+  const activateBooster = async (boosterId: string) => {
+    try {
+      await farmApi.activateBooster(boosterId);
+      toast({ title: "Успешно", description: "Бустер активирован!" });
+      // Refresh boosters
+      const [zoneBoosters, userBoosters] = await Promise.all([
+        farmApi.getZoneBoosters(zoneId).catch(() => []),
+        farmApi.getUserActiveBoosters().catch(() => []),
+      ]);
+      setBoosters(zoneBoosters || []);
+      setActiveBoosters(userBoosters || []);
+    } catch (error: any) {
+      toast({ title: "Ошибка", description: error.message || "Не удалось активировать бустер", variant: "destructive" });
+    }
+  };
 
   // Create slots arrays with proper indexing
   const plantSlots = Array.from({ length: 6 }, (_, i) => {
@@ -128,20 +168,69 @@ const FarmZoneView = ({
         </div>
       </div>
 
-      {loading ? (
+      {loading || boostersLoading ? (
         <div className="text-center py-8">Загрузка...</div>
       ) : showBoosters ? (
-        <Card className="p-6">
-          <div className="text-center space-y-4">
-            <Zap className="h-12 w-12 mx-auto text-muted-foreground" />
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Бустеры</h3>
-              <p className="text-sm text-muted-foreground">
-                Выполняй задания, чтобы открыть бустеры для этой зоны
-              </p>
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Zap className="h-5 w-5 text-primary" />
+            Бустеры зоны
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            {zoneType === "chemistry" && "Ускорение скорости выращивания и скотоводства в Биологии"}
+            {(zoneType === "mathematics" || zoneType === "math") && "Ускорения и бонусы цепочек производства в Физике"}
+            {zoneType === "it" && "Бонусы для Биологии и Физики одновременно (откат ×2)"}
+          </p>
+          {boosters.length === 0 ? (
+            <Card className="p-6">
+              <div className="text-center space-y-4">
+                <Zap className="h-12 w-12 mx-auto text-muted-foreground" />
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Пока нет бустеров</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Выполняй задания, чтобы открыть бустеры для этой зоны
+                  </p>
+                </div>
+              </div>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {boosters.map((booster) => {
+                const isActive = activeBoosters.some(ab => ab.boosterId === booster.id && new Date(ab.expiresAt) > new Date());
+                const onCooldown = activeBoosters.some(ab => ab.boosterId === booster.id && new Date(ab.canActivateAgainAt) > new Date());
+                return (
+                  <Card key={booster.id} className={`p-4 ${isActive ? 'border-primary ring-2 ring-primary/20' : ''}`}>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-primary" />
+                          <span className="font-semibold">{booster.name}</span>
+                          {isActive && <Badge variant="default" className="text-xs">Активен</Badge>}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{booster.description}</p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Timer className="h-3 w-3" />
+                            {Math.floor(booster.duration / 60)} мин
+                          </span>
+                          <span>×{booster.speedMultiplier} скорость</span>
+                          <span>Откат: {Math.floor(booster.cooldown / 60)} мин</span>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={isActive || onCooldown || !userId}
+                        onClick={() => activateBooster(booster.id)}
+                      >
+                        {isActive ? "Активен" : onCooldown ? "Откат" : "Активировать"}
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
-          </div>
-        </Card>
+          )}
+        </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className={`grid w-full ${showPlants && showAnimals ? 'grid-cols-2' : 'grid-cols-1'}`}>

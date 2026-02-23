@@ -13,6 +13,8 @@ import { UserFarmAnimal } from './entities/user-farm-animal.entity';
 import { ProductionChain } from './entities/production-chain.entity';
 import { ProductionChainIngredient } from './entities/production-chain-ingredient.entity';
 import { UserProduction } from './entities/user-production.entity';
+import { ZoneBooster } from './entities/zone-booster.entity';
+import { UserActiveBooster } from './entities/user-active-booster.entity';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -38,6 +40,8 @@ import { AuthModule } from '../auth/auth.module';
       ProductionChain,
       ProductionChainIngredient,
       UserProduction,
+      ZoneBooster,
+      UserActiveBooster,
     ]),
   ],
   controllers: [FarmController],

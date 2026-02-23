@@ -8,6 +8,8 @@ import { FarmAnimal } from './entities/farm-animal.entity';
 import { UserFarmAnimal } from './entities/user-farm-animal.entity';
 import { ProductionChain } from './entities/production-chain.entity';
 import { UserProduction } from './entities/user-production.entity';
+import { ZoneBooster } from './entities/zone-booster.entity';
+import { UserActiveBooster } from './entities/user-active-booster.entity';
 import { PlantSeedDto } from './dto/plant-seed.dto';
 import { StartProductionDto } from './dto/start-production.dto';
 import { FarmGateway } from './farm.gateway';
@@ -29,6 +31,10 @@ export class FarmService {
     private productionChainsRepo: Repository<ProductionChain>,
     @InjectRepository(UserProduction)
     private userProductionsRepo: Repository<UserProduction>,
+    @InjectRepository(ZoneBooster)
+    private zoneBoostersRepo: Repository<ZoneBooster>,
+    @InjectRepository(UserActiveBooster)
+    private userActiveBoostersRepo: Repository<UserActiveBooster>,
     @Inject(forwardRef(() => FarmGateway))
     private farmGateway: FarmGateway,
   ) {}
@@ -392,5 +398,53 @@ export class FarmService {
   // Items
   async getFarmItems(): Promise<FarmItem[]> {
     return this.farmItemsRepo.find();
+  }
+
+  // Boosters
+  async getZoneBoosters(zoneId: string): Promise<ZoneBooster[]> {
+    return this.zoneBoostersRepo.find({ where: { zoneId } });
+  }
+
+  async getUserActiveBoosters(userId: string): Promise<UserActiveBooster[]> {
+    return this.userActiveBoostersRepo.find({
+      where: { userId },
+      relations: ['booster'],
+    });
+  }
+
+  async activateBooster(userId: string, boosterId: string): Promise<UserActiveBooster> {
+    const booster = await this.zoneBoostersRepo.findOne({ where: { id: boosterId } });
+    if (!booster) {
+      throw new NotFoundException('Booster not found');
+    }
+
+    // Check cooldown
+    const existing = await this.userActiveBoostersRepo.findOne({
+      where: { userId, boosterId },
+    });
+    if (existing && new Date(existing.canActivateAgainAt) > new Date()) {
+      throw new BadRequestException('Booster is on cooldown');
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + booster.duration * 1000);
+    const canActivateAgainAt = new Date(now.getTime() + booster.cooldown * 1000);
+
+    if (existing) {
+      existing.activatedAt = now;
+      existing.expiresAt = expiresAt;
+      existing.canActivateAgainAt = canActivateAgainAt;
+      return this.userActiveBoostersRepo.save(existing);
+    }
+
+    const activeBooster = this.userActiveBoostersRepo.create({
+      userId,
+      boosterId,
+      activatedAt: now,
+      expiresAt,
+      canActivateAgainAt,
+    });
+
+    return this.userActiveBoostersRepo.save(activeBooster);
   }
 }
