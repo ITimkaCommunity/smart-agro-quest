@@ -18,9 +18,9 @@ interface PlantSelectionSheetProps {
 interface SeedItem {
   id: string;
   name: string;
-  icon_emoji: string;
-  production_time: number;
-  unlock_tasks_required: number;
+  iconEmoji: string;
+  productionTime: number;
+  unlockTasksRequired: number;
 }
 
 export default function PlantSelectionSheet({
@@ -33,6 +33,7 @@ export default function PlantSelectionSheet({
 }: PlantSelectionSheetProps) {
   const [seeds, setSeeds] = useState<SeedItem[]>([]);
   const [tasksCompleted, setTasksCompleted] = useState(0);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,26 +44,37 @@ export default function PlantSelectionSheet({
   }, [open, zoneId]);
 
   const loadSeeds = async () => {
+    setLoading(true);
     try {
-      const zones = await zonesApi.getAllZones();
-      const zone = zones.find(z => z.id === zoneId);
-      if (zone && zone.farm_items) {
-        const seeds = zone.farm_items.filter((item: any) => item.category === 'seed');
-        setSeeds(seeds.sort((a: any, b: any) => 
-          a.unlock_tasks_required - b.unlock_tasks_required
-        ));
-      }
+      const allItems = await farmApi.getFarmItems();
+      // Filter seeds for this zone
+      const zoneSeeds = (allItems || []).filter(
+        (item: any) => item.category === 'seed' && item.zoneId === zoneId
+      );
+      setSeeds(
+        zoneSeeds
+          .map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            iconEmoji: item.iconEmoji,
+            productionTime: item.productionTime || 120,
+            unlockTasksRequired: item.unlockTasksRequired || 0,
+          }))
+          .sort((a: SeedItem, b: SeedItem) => a.unlockTasksRequired - b.unlockTasksRequired)
+      );
     } catch (error) {
       console.error("Error loading seeds:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const loadUserProgress = async () => {
     try {
       const progressData = await zonesApi.getUserProgress();
-      const zoneProgress = progressData.find((p: any) => p.zone_id === zoneId);
+      const zoneProgress = (progressData || []).find((p: any) => p.zoneId === zoneId || p.zone_id === zoneId);
       if (zoneProgress) {
-        setTasksCompleted(zoneProgress.tasks_completed || 0);
+        setTasksCompleted(zoneProgress.tasksCompleted || zoneProgress.tasks_completed || 0);
       }
     } catch (error) {
       console.error("Error loading progress:", error);
@@ -78,7 +90,7 @@ export default function PlantSelectionSheet({
       });
       
       toast({
-        title: "Успешно",
+        title: "Успешно 🌱",
         description: "Растение посажено",
       });
       onPlantSelected();
@@ -99,48 +111,52 @@ export default function PlantSelectionSheet({
           <SheetTitle>Выберите растение</SheetTitle>
         </SheetHeader>
         <div className="mt-6 space-y-3">
-          {seeds
-            .filter((seed) => {
-              const isUnlocked = tasksCompleted >= seed.unlock_tasks_required;
-              // Show unlocked items and the next locked item
-              if (isUnlocked) return true;
-              // Find the next locked item (first one that's locked)
-              const firstLocked = seeds.find(s => s.unlock_tasks_required > tasksCompleted);
-              return seed.id === firstLocked?.id;
-            })
-            .map((seed) => {
-              const isUnlocked = tasksCompleted >= seed.unlock_tasks_required;
-              return (
-                <Card
-                  key={seed.id}
-                  className={`p-4 ${!isUnlocked ? "opacity-60" : ""}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">{seed.icon_emoji}</span>
-                      <div>
-                        <p className="font-medium">{seed.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Время роста: {Math.floor(seed.production_time / 60)} мин
-                        </p>
-                        {!isUnlocked && (
-                          <p className="text-xs text-destructive">
-                            Требуется {seed.unlock_tasks_required} заданий
+          {loading ? (
+            <div className="text-center py-4 text-muted-foreground">Загрузка...</div>
+          ) : seeds.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">Нет доступных семян для этой зоны</div>
+          ) : (
+            seeds
+              .filter((seed) => {
+                const isUnlocked = tasksCompleted >= seed.unlockTasksRequired;
+                if (isUnlocked) return true;
+                const firstLocked = seeds.find(s => s.unlockTasksRequired > tasksCompleted);
+                return seed.id === firstLocked?.id;
+              })
+              .map((seed) => {
+                const isUnlocked = tasksCompleted >= seed.unlockTasksRequired;
+                return (
+                  <Card
+                    key={seed.id}
+                    className={`p-4 ${!isUnlocked ? "opacity-60" : ""}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{seed.iconEmoji}</span>
+                        <div>
+                          <p className="font-medium">{seed.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Время роста: {Math.floor(seed.productionTime / 60)} мин
                           </p>
-                        )}
+                          {!isUnlocked && (
+                            <p className="text-xs text-destructive">
+                              Требуется {seed.unlockTasksRequired} заданий
+                            </p>
+                          )}
+                        </div>
                       </div>
+                      <Button
+                        onClick={() => handlePlantSeed(seed.id)}
+                        disabled={!isUnlocked}
+                        size="sm"
+                      >
+                        {isUnlocked ? "Посадить" : <Lock className="h-4 w-4" />}
+                      </Button>
                     </div>
-                    <Button
-                      onClick={() => handlePlantSeed(seed.id)}
-                      disabled={!isUnlocked}
-                      size="sm"
-                    >
-                      {isUnlocked ? "Посадить" : <Lock className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
+                  </Card>
+                );
+              })
+          )}
         </div>
       </SheetContent>
     </Sheet>
