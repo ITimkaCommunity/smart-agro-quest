@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TasksSkeleton } from "@/components/ui/loading-skeleton";
 import { BookOpen, Lock, CheckCircle, Clock } from "lucide-react";
-import { tasksApi } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Task {
   id: string;
@@ -34,16 +34,26 @@ const Tasks = () => {
       if (!user) return;
 
       try {
-        // Load tasks
-        const tasksData = await tasksApi.getAllTasks();
-        
-        // Load user submissions
-        const submissionsData = await tasksApi.getUserSubmissions();
+        // Load tasks from Supabase
+        const { data: tasksData, error: tasksError } = await supabase
+          .from('tasks')
+          .select('*, farm_zones(name)')
+          .order('created_at', { ascending: false });
+
+        if (tasksError) throw tasksError;
+
+        // Load user submissions from Supabase
+        const { data: submissionsData, error: subsError } = await supabase
+          .from('task_submissions')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (subsError) throw subsError;
         setSubmissions(submissionsData || []);
 
         // Combine tasks with submission status
-        const tasksWithStatus = tasksData.map((task: any) => {
-          const submission = submissionsData?.find((s: any) => s.taskId === task.id);
+        const tasksWithStatus = (tasksData || []).map((task: any) => {
+          const submission = submissionsData?.find((s: any) => s.task_id === task.id);
           let status = "available";
           
           if (submission) {
@@ -55,7 +65,13 @@ const Tasks = () => {
           }
 
           return {
-            ...task,
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            difficulty: task.difficulty,
+            experienceReward: task.experience_reward,
+            requiredLevel: task.required_level,
+            zone: task.farm_zones,
             status,
           };
         });
