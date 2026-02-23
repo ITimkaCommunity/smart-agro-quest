@@ -16,7 +16,14 @@ interface ChatWidgetProps {
 }
 
 export const ChatWidget = ({ onClose }: ChatWidgetProps) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'welcome',
+      role: 'assistant',
+      content: 'Привет! 👋 Я ТИММИ — твой AI-помощник в EduFarm. Помогу разобраться с заданиями, подскажу по учёбе и расскажу, как устроена платформа. Спрашивай!',
+      timestamp: new Date(),
+    },
+  ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -50,7 +57,8 @@ export const ChatWidget = ({ onClose }: ChatWidgetProps) => {
         },
         body: JSON.stringify({
           message: input,
-          history: messages.map(m => ({ role: m.role, content: m.content })),
+          history: messages.filter(m => m.id !== 'welcome').map(m => ({ role: m.role, content: m.content })),
+          system_prompt: 'Тебя зовут ТИММИ. Ты дружелюбный AI-помощник образовательной платформы EduFarm. Ты помогаешь студентам с заданиями, объясняешь материалы, подсказываешь по работе с платформой (ферма, задания, достижения, питомец). Отвечай на русском языке, кратко и по делу. Когда тебя спрашивают "расскажи про себя" — представься как ТИММИ и опиши свои возможности.',
         }),
       });
 
@@ -94,8 +102,8 @@ export const ChatWidget = ({ onClose }: ChatWidgetProps) => {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-muted/50">
         <div>
-          <h3 className="font-semibold text-foreground">AI Помощник</h3>
-          <p className="text-xs text-muted-foreground">Студенческий копайлот</p>
+          <h3 className="font-semibold text-foreground">ТИММИ</h3>
+          <p className="text-xs text-muted-foreground">Твой AI-помощник в EduFarm</p>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -105,9 +113,9 @@ export const ChatWidget = ({ onClose }: ChatWidgetProps) => {
       {/* Messages */}
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
-          {messages.length === 0 && (
-            <div className="text-center text-muted-foreground text-sm py-8">
-              Привет! Я твой AI помощник. Чем могу помочь?
+          {messages.length <= 1 && messages[0]?.id === 'welcome' && (
+            <div className="text-center text-muted-foreground text-xs py-2">
+              Начни диалог — напиши что-нибудь!
             </div>
           )}
           {messages.map((message) => (
