@@ -19,7 +19,7 @@ export async function seedBoosters(dataSource: DataSource) {
   await dataSource.query(`
     CREATE TABLE IF NOT EXISTS user_active_boosters (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      user_id UUID NOT NULL REFERENCES users(id),
+      user_id UUID NOT NULL,
       booster_id UUID NOT NULL REFERENCES zone_boosters(id),
       activated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       expires_at TIMESTAMP WITH TIME ZONE NOT NULL,

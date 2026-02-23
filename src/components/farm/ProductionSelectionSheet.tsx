@@ -18,18 +18,18 @@ interface ProductionSelectionSheetProps {
 interface ProductionChain {
   id: string;
   name: string;
-  base_time: number;
-  unlock_tasks_required: number;
-  output_item: {
-    icon_emoji: string;
+  baseTime: number;
+  unlockTasksRequired: number;
+  outputItem?: {
+    iconEmoji: string;
   };
   ingredients: Array<{
     item: {
       id: string;
       name: string;
-      icon_emoji: string;
+      iconEmoji: string;
     };
-    quantity_needed: number;
+    quantityNeeded: number;
   }>;
 }
 
@@ -43,6 +43,7 @@ export default function ProductionSelectionSheet({
 }: ProductionSelectionSheetProps) {
   const [chains, setChains] = useState<ProductionChain[]>([]);
   const [tasksCompleted, setTasksCompleted] = useState(0);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -53,70 +54,48 @@ export default function ProductionSelectionSheet({
   }, [open, zoneId]);
 
   const loadProductionChains = async () => {
+    setLoading(true);
     try {
-      const zones = await zonesApi.getAllZones();
-      const zone = zones.find(z => z.id === zoneId);
-      if (zone && zone.production_chains) {
-        setChains(zone.production_chains.sort((a: any, b: any) => 
-          a.unlock_tasks_required - b.unlock_tasks_required
-        ));
-      }
+      const allChains = await farmApi.getProductionChains(zoneId);
+      setChains(
+        (allChains || [])
+          .map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            baseTime: c.baseTime || 0,
+            unlockTasksRequired: c.unlockTasksRequired || 0,
+            outputItem: c.outputItem ? { iconEmoji: c.outputItem.iconEmoji } : undefined,
+            ingredients: (c.ingredients || []).map((ing: any) => ({
+              item: {
+                id: ing.item?.id || ing.itemId,
+                name: ing.item?.name || 'Ресурс',
+                iconEmoji: ing.item?.iconEmoji || '📦',
+              },
+              quantityNeeded: ing.quantityNeeded || 1,
+            })),
+          }))
+          .sort((a: ProductionChain, b: ProductionChain) => a.unlockTasksRequired - b.unlockTasksRequired)
+      );
     } catch (error) {
       console.error("Error loading production chains:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const loadUserProgress = async () => {
     try {
       const progressData = await zonesApi.getUserProgress();
-      const zoneProgress = progressData.find((p: any) => p.zone_id === zoneId);
+      const zoneProgress = (progressData || []).find((p: any) => p.zoneId === zoneId || p.zone_id === zoneId);
       if (zoneProgress) {
-        setTasksCompleted(zoneProgress.tasks_completed || 0);
+        setTasksCompleted(zoneProgress.tasksCompleted || zoneProgress.tasks_completed || 0);
       }
     } catch (error) {
       console.error("Error loading progress:", error);
     }
   };
 
-  const handleStartProduction = async (chainId: string, baseTime: number) => {
-    const chain = chains.find((c) => c.id === chainId);
-    if (!chain) return;
-
-    // Check inventory for all ingredients
-    let inventory: any[] = [];
-    try {
-      inventory = await farmApi.getInventory();
-    } catch (error) {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось проверить инвентарь",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if user has all ingredients
-    const missingIngredients = [];
-    for (const ingredient of chain.ingredients) {
-      const userItem = inventory.find((i: any) => i.item_id === ingredient.item.id);
-      const available = userItem?.quantity || 0;
-      if (available < ingredient.quantity_needed) {
-        missingIngredients.push(
-          `${ingredient.item.name} (есть: ${available}, нужно: ${ingredient.quantity_needed})`
-        );
-      }
-    }
-
-    if (missingIngredients.length > 0) {
-      toast({
-        title: "Недостаточно ресурсов",
-        description: `Не хватает: ${missingIngredients.join(", ")}`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Start production via API (backend will handle ingredient deduction)
+  const handleStartProduction = async (chainId: string) => {
     try {
       await farmApi.startProduction({
         chainId,
@@ -125,7 +104,7 @@ export default function ProductionSelectionSheet({
       });
 
       toast({
-        title: "Успешно",
+        title: "Успешно ⚙️",
         description: "Производство запущено",
       });
       onProductionSelected();
@@ -146,59 +125,65 @@ export default function ProductionSelectionSheet({
           <SheetTitle>Выберите рецепт</SheetTitle>
         </SheetHeader>
         <div className="mt-6 space-y-3">
-          {chains
-            .filter((chain) => {
-              const isUnlocked = tasksCompleted >= chain.unlock_tasks_required;
-              // Show unlocked items and the next locked item
-              if (isUnlocked) return true;
-              // Find the next locked item (first one that's locked)
-              const firstLocked = chains.find(c => c.unlock_tasks_required > tasksCompleted);
-              return chain.id === firstLocked?.id;
-            })
-            .map((chain) => {
-              const isUnlocked = tasksCompleted >= chain.unlock_tasks_required;
-              return (
-                <Card
-                  key={chain.id}
-                  className={`p-4 ${!isUnlocked ? "opacity-60" : ""}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-3xl">{chain.output_item.icon_emoji}</span>
-                        <div>
-                          <p className="font-medium">{chain.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Время: {Math.floor(chain.base_time / 60)} мин
-                          </p>
+          {loading ? (
+            <div className="text-center py-4 text-muted-foreground">Загрузка...</div>
+          ) : chains.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">Нет доступных рецептов для этой зоны</div>
+          ) : (
+            chains
+              .filter((chain) => {
+                const isUnlocked = tasksCompleted >= chain.unlockTasksRequired;
+                if (isUnlocked) return true;
+                const firstLocked = chains.find(c => c.unlockTasksRequired > tasksCompleted);
+                return chain.id === firstLocked?.id;
+              })
+              .map((chain) => {
+                const isUnlocked = tasksCompleted >= chain.unlockTasksRequired;
+                return (
+                  <Card
+                    key={chain.id}
+                    className={`p-4 ${!isUnlocked ? "opacity-60" : ""}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-3xl">{chain.outputItem?.iconEmoji || '📦'}</span>
+                          <div>
+                            <p className="font-medium">{chain.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Время: {Math.floor(chain.baseTime / 60)} мин
+                            </p>
+                          </div>
                         </div>
+                        {chain.ingredients.length > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            Требуется:{" "}
+                            {chain.ingredients.map((ing, i) => (
+                              <span key={i}>
+                                {ing.quantityNeeded}x {ing.item.iconEmoji} {ing.item.name}
+                                {i < chain.ingredients.length - 1 && ", "}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {!isUnlocked && (
+                          <p className="text-xs text-destructive mt-1">
+                            Требуется {chain.unlockTasksRequired} заданий
+                          </p>
+                        )}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Требуется:{" "}
-                        {chain.ingredients.map((ing, i) => (
-                          <span key={i}>
-                            {ing.quantity_needed}x {ing.item.icon_emoji} {ing.item.name}
-                            {i < chain.ingredients.length - 1 && ", "}
-                          </span>
-                        ))}
-                      </div>
-                      {!isUnlocked && (
-                        <p className="text-xs text-destructive mt-1">
-                          Требуется {chain.unlock_tasks_required} заданий
-                        </p>
-                      )}
+                      <Button
+                        onClick={() => handleStartProduction(chain.id)}
+                        disabled={!isUnlocked}
+                        size="sm"
+                      >
+                        {isUnlocked ? "Начать" : <Lock className="h-4 w-4" />}
+                      </Button>
                     </div>
-                    <Button
-                      onClick={() => handleStartProduction(chain.id, chain.base_time)}
-                      disabled={!isUnlocked}
-                      size="sm"
-                    >
-                      {isUnlocked ? "Начать" : <Lock className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
+                  </Card>
+                );
+              })
+          )}
         </div>
       </SheetContent>
     </Sheet>
