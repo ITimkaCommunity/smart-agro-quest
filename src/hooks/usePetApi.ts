@@ -21,7 +21,7 @@ export const usePetApi = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const isRefreshingRef = useRef(false);
-  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastUpdateRef = useRef<number>(0);
 
   useEffect(() => {
