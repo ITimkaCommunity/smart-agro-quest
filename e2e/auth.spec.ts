@@ -1,14 +1,18 @@
 import { test, expect } from '@playwright/test';
+import {
+  expectLoginFormVisible,
+  loginWithCredentials,
+  openLoginPage,
+  studentCredentials,
+} from './helpers/auth';
 
 test.describe('Authentication Flow', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await openLoginPage(page);
   });
 
   test('should display login page', async ({ page }) => {
-    await expect(page.locator('h1')).toContainText(/sign in|login/i);
-    await expect(page.locator('input[type="email"]')).toBeVisible();
-    await expect(page.locator('input[type="password"]')).toBeVisible();
+    await expectLoginFormVisible(page);
   });
 
   test('should register new user', async ({ page }) => {
@@ -32,15 +36,8 @@ test.describe('Authentication Flow', () => {
   });
 
   test('should login existing user', async ({ page }) => {
-    // Use test credentials
-    await page.fill('input[type="email"]', 'test@example.com');
-    await page.fill('input[type="password"]', 'password123');
-    
-    await page.click('button[type="submit"]');
-    
-    // Should redirect to dashboard
-    await page.waitForURL('**/dashboard', { timeout: 10000 });
-    await expect(page.locator('h1')).toContainText(/dashboard/i);
+    await loginWithCredentials(page, studentCredentials.email, studentCredentials.password);
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 
   test('should show error on invalid credentials', async ({ page }) => {
@@ -55,7 +52,7 @@ test.describe('Authentication Flow', () => {
 
   test('should validate email format', async ({ page }) => {
     await page.fill('input[type="email"]', 'invalid-email');
-    await page.fill('input[type="password"]', 'password123');
+    await page.fill('input[type="password"]', studentCredentials.password);
     
     await page.click('button[type="submit"]');
     

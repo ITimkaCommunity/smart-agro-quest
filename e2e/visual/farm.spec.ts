@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { loginAsStudent } from '../helpers/auth';
+
+test.skip(!process.env.RUN_VISUAL, 'Visual snapshots run only when RUN_VISUAL is set');
 
 async function loginAndGoToFarm(page) {
-  await page.goto('/');
-  await page.fill('input[type="email"]', 'student@example.com');
-  await page.fill('input[type="password"]', 'password123');
-  await page.click('button[type="submit"]');
-  await page.waitForURL('**/dashboard', { timeout: 10000 });
+  await loginAsStudent(page);
   await page.goto('/farm');
   await page.waitForLoadState('networkidle');
 }

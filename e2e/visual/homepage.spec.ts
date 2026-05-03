@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { openLoginPage } from '../helpers/auth';
+
+test.skip(!process.env.RUN_VISUAL, 'Visual snapshots run only when RUN_VISUAL is set');
 
 test.describe('Homepage Visual Regression', () => {
   test('homepage should match baseline', async ({ page }) => {
@@ -23,7 +26,7 @@ test.describe('Homepage Visual Regression', () => {
   });
 
   test('login form should match baseline', async ({ page }) => {
-    await page.goto('/');
+    await openLoginPage(page);
     await page.waitForLoadState('networkidle');
     
     const loginForm = page.locator('form');

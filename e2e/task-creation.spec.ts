@@ -1,13 +1,5 @@
 import { test, expect } from '@playwright/test';
-
-// Helper to login as teacher
-async function loginAsTeacher(page) {
-  await page.goto('/');
-  await page.fill('input[type="email"]', 'teacher@example.com');
-  await page.fill('input[type="password"]', 'password123');
-  await page.click('button[type="submit"]');
-  await page.waitForURL('**/dashboard', { timeout: 10000 });
-}
+import { loginAsTeacher } from './helpers/auth';
 
 test.describe('Task Creation Flow', () => {
   test.beforeEach(async ({ page }) => {

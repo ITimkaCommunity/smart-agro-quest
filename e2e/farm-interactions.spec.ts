@@ -1,13 +1,5 @@
 import { test, expect } from '@playwright/test';
-
-// Helper to login as student
-async function loginAsStudent(page) {
-  await page.goto('/');
-  await page.fill('input[type="email"]', 'student@example.com');
-  await page.fill('input[type="password"]', 'password123');
-  await page.click('button[type="submit"]');
-  await page.waitForURL('**/dashboard', { timeout: 10000 });
-}
+import { loginAsStudent } from './helpers/auth';
 
 test.describe('Farm Interactions Flow', () => {
   test.beforeEach(async ({ page }) => {

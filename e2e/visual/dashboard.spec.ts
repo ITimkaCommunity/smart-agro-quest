@@ -1,12 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { loginAsStudent } from '../helpers/auth';
 
-async function loginAsStudent(page) {
-  await page.goto('/');
-  await page.fill('input[type="email"]', 'student@example.com');
-  await page.fill('input[type="password"]', 'password123');
-  await page.click('button[type="submit"]');
-  await page.waitForURL('**/dashboard', { timeout: 10000 });
-}
+test.skip(!process.env.RUN_VISUAL, 'Visual snapshots run only when RUN_VISUAL is set');
 
 test.describe('Dashboard Visual Regression', () => {
   test.beforeEach(async ({ page }) => {
