@@ -82,6 +82,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      rag-service:
+        condition: service_started
     environment:
       NODE_ENV: production
       PORT: 3001
@@ -97,6 +99,9 @@ services:
       REDIS_PORT: 6379
       STORAGE_TYPE: local
       UPLOAD_DIR: /app/uploads
+      # Connection to RAG microservice
+      RAG_SERVICE_URL: http://rag-service:8000
+      RAG_TIMEOUT_MS: 120000
       # For MinIO (S3-compatible) storage:
       # STORAGE_TYPE: s3
       # S3_ENDPOINT: http://minio:9000
