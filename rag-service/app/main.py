@@ -42,7 +42,7 @@ async def lifespan(app: FastAPI):
     try:
         async with httpx.AsyncClient(
             timeout=10.0,
-            proxies={"all://127.0.0.1": None, "all://localhost": None},
+            proxies={"all://host.docker.internal": None},
         ) as client:
             r = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
             logger.info(f"✅ Ollama доступна: HTTP {r.status_code}")
