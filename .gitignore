@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 
+rag-service/.env
 test-results/
 
 # Editor directories and files
@@ -24,3 +25,9 @@ test-results/
 *.njsproj
 *.sln
 *.sw?
+
+
+.env
+.env
+rag-service/data/chroma_db
+rag-service/data/textbooks
