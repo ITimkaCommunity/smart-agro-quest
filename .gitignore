@@ -1,104 +1,42 @@
 ```
-# Docker related
-.dockerenv
-Dockerfile*
-docker-compose*.yml
-!docker-compose.yml
-
-# Logs and temp files
-*.log
-*.tmp
-
-# Environment variables
-.env
-.env.local
-*.env.*
-
 # Dependencies
-node_modules/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-venv/
+*.py.class
+*.py.obj
 .venv/
-.envrc
-.venv.bak/
+venv/
+.env
+.env.local
+*.env.*
 
-# Build artifacts
+# Build and distribution artifacts
 build/
 dist/
 *.egg-info/
-.installed.cfg
-.coverage
-htmlcov/
-.coverage.*
-.nyc_output/
-coverage/
 
-# IDE specific
+# Logs
+*.log
+
+# Editor/IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
 *.tmp
-*~
-.DS_Store
-Thumbs.db
 
-# System files
-.DS_Store
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Icon?
-apidoc/
-doc/
-docs/
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Icon?
-Thumbs.db
-
-# Python specific
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-.venv/
-.env/
-.envrc
-.pytest_cache/
-.mypy_cache/
-.hypothesis/
+# Coverage reports
 .coverage
-.coverage.*
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-.git/
-.mypy_cache/
-.pytest_cache/
-.hypothesis/
-.tox/
-.coverage
+coverage/
 htmlcov/
-.coverage.*
-nosetests.xml
-coverage.xml
-*.cover
-*.log
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+
+# OS files
+.DS_Store
+Thumbs.db
 ```
