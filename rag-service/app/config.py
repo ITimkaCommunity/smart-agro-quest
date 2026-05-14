@@ -18,7 +18,8 @@ class Settings(BaseSettings):
     EMBEDDING_FUNCTION: str = "onnx_minilm_l6_v2"
 
     # Ollama local LLM
-    OLLAMA_BASE_URL: str = "http://127.0.0.1:11434"
+    # host.docker.internal работает на Windows/macOS Docker Desktop
+    OLLAMA_BASE_URL: str = "http://host.docker.internal:11434"
     OLLAMA_MODEL: str = "qwen2.5-3b-instruct-q4km"
     OLLAMA_TEMPERATURE: float = 0.2
     OLLAMA_NUM_CTX: int = 4096       # было 1024 — слишком мало, модель обрезалась и бредила

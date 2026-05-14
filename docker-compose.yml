@@ -100,7 +100,9 @@ services:
       STORAGE_TYPE: local
       UPLOAD_DIR: /app/uploads
       # Connection to RAG microservice
-      RAG_SERVICE_URL: http://127.0.0.1:8001
+      # host.docker.internal используется в Docker Desktop для доступа к хост-машине,
+      # где запущен Ollama. RAG-сервис с network_mode: host также доступен по этому адресу.
+      RAG_SERVICE_URL: http://host.docker.internal:8001
       RAG_TIMEOUT_MS: 120000
       # For MinIO (S3-compatible) storage:
       # STORAGE_TYPE: s3

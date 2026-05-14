@@ -1,42 +1,32 @@
 ```
+# Environment files
+.env.local
+.env.staging
+.env.docker
+
 # Dependencies
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.py.class
-*.py.obj
-.venv/
-venv/
-.env
-.env.local
-*.env.*
-
-# Build and distribution artifacts
-build/
-dist/
-*.egg-info/
 
 # Logs
 *.log
 
-# Editor/IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
-
-# Coverage reports
+# Coverage
 .coverage
 coverage/
 htmlcov/
 
-# Testing
-.pytest_cache/
-.mypy_cache/
+# Temporary files
+*.tmp
+*.swp
+*.swo
 
-# OS files
+# OS generated files
 .DS_Store
 Thumbs.db
+
+# Docker
+.dockerenv
 ```

@@ -7,7 +7,8 @@ from loguru import logger
 from app.config import settings
 
 # Отключаем системный прокси для локальных адресов (решает проблему с V2Ray/Clash на Windows)
-NO_PROXY = {"all://127.0.0.1": None, "all://localhost": None}
+# host.docker.internal используется в Docker Desktop для доступа к хост-машине
+NO_PROXY = {"all://host.docker.internal": None}
 
 
 class OllamaClient:
