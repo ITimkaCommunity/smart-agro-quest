@@ -18,6 +18,7 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module';
 import { GroupsModule } from './modules/groups/groups.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { HealthModule } from './modules/health/health.module';
+import { AiModule } from './modules/ai/ai.module';
 import { winstonConfig } from './config/winston.config';
 import { PrometheusInterceptor } from './common/interceptors/prometheus.interceptor';
 
@@ -66,6 +67,7 @@ import { PrometheusInterceptor } from './common/interceptors/prometheus.intercep
     GroupsModule,
     StorageModule,
     HealthModule,
+    AiModule,
   ],
   providers: [PrometheusInterceptor],
 })

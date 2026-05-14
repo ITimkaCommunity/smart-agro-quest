@@ -28,8 +28,10 @@ export const ChatWidget = ({ onClose }: ChatWidgetProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Get FastAPI endpoint from environment or use default
-  const FASTAPI_ENDPOINT = import.meta.env.VITE_FASTAPI_URL || 'http://localhost:8000/api/chat';
+  // Route AI requests through NestJS backend, which proxies to RAG service.
+  // Override with VITE_AI_CHAT_URL if you need to bypass the gateway.
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+  const AI_CHAT_ENDPOINT = import.meta.env.VITE_AI_CHAT_URL || `${BACKEND_URL}/ai/chat`;
 
   // Local fallback responses — work without any backend
   const LOCAL_RESPONSES: { patterns: RegExp; reply: string }[] = [
@@ -103,28 +105,28 @@ export const ChatWidget = ({ onClose }: ChatWidgetProps) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(FASTAPI_ENDPOINT, {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(AI_CHAT_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          message: currentInput,
-          history: messages.filter(m => m.id !== 'welcome').map(m => ({ role: m.role, content: m.content })),
-          system_prompt: 'Тебя зовут ТИММИ. Ты дружелюбный AI-помощник образовательной платформы EduFarm. Ты помогаешь студентам с заданиями, объясняешь материалы, подсказываешь по работе с платформой (ферма, задания, достижения, питомец). Отвечай на русском языке, кратко и по делу. Когда тебя спрашивают "расскажи про себя" — представься как ТИММИ и опиши свои возможности.',
+          query: currentInput,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        throw new Error(`AI request failed: ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.response || data.message || 'No response',
+        content: data.answer || data.response || data.message || 'Нет ответа',
         timestamp: new Date(),
       };
 
