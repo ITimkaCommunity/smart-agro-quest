@@ -9,7 +9,7 @@ graph LR
     Student[Ученик] --> Platform
     Teacher[Учитель] --> Platform
     Admin[Администратор] --> Platform
-    Parent[Родитель (опц.)] -.просмотр прогресса.-> Platform
+    Parent[Родитель, опционально] -.->|просмотр прогресса| Platform
     Platform --> School[Школа / агрокласс]
 ```
 
@@ -170,8 +170,8 @@ flowchart LR
     B --> C[Intent classification]
     C --> D[Извлечение контекста профиля и прогресса]
     D --> E[RAG: поиск релевантных фрагментов]
-    E --> F[Формирование system + user prompt]
-    F --> G[LLM (Ollama/FastAPI)]
+    E --> F[Формирование system and user prompt]
+    F --> G[LLM Ollama FastAPI]
     G --> H[Постобработка и проверка тона/безопасности]
     H --> I[Ответ + рекомендации + next steps]
 ```
