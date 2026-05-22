@@ -1,13 +1,10 @@
-import js from '@eslint/js';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
-import globals from 'globals';
 
 export default [
   {
     ignores: ['**/dist/**', '**/node_modules/**', '**/jest.config.js'],
   },
-  js.configs.recommended,
   {
     files: ['**/*.ts'],
     languageOptions: {
@@ -18,8 +15,20 @@ export default [
         project: './tsconfig.json',
       },
       globals: {
-        ...globals.node,
-        ...globals.jest,
+        process: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        module: 'readonly',
+        require: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        jest: 'readonly',
       },
     },
     plugins: {
@@ -28,7 +37,6 @@ export default [
     rules: {
       ...tsPlugin.configs.recommended.rules,
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/interface-annotation-style': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
