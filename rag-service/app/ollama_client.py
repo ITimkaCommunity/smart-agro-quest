@@ -8,7 +8,7 @@ from app.config import settings
 
 # Отключаем системный прокси для локальных адресов (решает проблему с V2Ray/Clash на Windows)
 # host.docker.internal используется в Docker Desktop для доступа к хост-машине
-NO_PROXY = {"all://host.docker.internal": None}
+NO_PROXY = {"all://127.0.0.1": None, "all://localhost": None, "all://host.docker.internal": None}
 
 
 class OllamaClient:

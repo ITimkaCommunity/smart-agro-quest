@@ -150,7 +150,9 @@ services:
 
   # =====================================================================
   # RAG microservice (FastAPI + ChromaDB + Ollama proxy)
-  # Ollama runs on the Windows HOST. We use network_mode: host to access 127.0.0.1 directly.
+  # Ollama runs on the Windows HOST.
+  # host.docker.internal — специальный DNS Docker Desktop для доступа к хосту Windows.
+  # network_mode: host не работает на Windows/macOS, поэтому используем порт + extra_hosts.
   # =====================================================================
   rag-service:
     build:
@@ -158,15 +160,18 @@ services:
       dockerfile: Dockerfile
     container_name: edufarm-rag-service
     restart: unless-stopped
-    network_mode: "host"
+    ports:
+      - "8001:8001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./rag-service/data/chroma_db:/app/data/chroma_db
       - ./rag-service/data/textbooks:/app/data/textbooks
     environment:
       LLM_PROVIDER: ollama
       EMBEDDING_FUNCTION: ${EMBEDDING_FUNCTION:-onnx_minilm_l6_v2}
-      # Ollama listens on the host localhost (port 11434)
-      OLLAMA_BASE_URL: http://127.0.0.1:11434
+      # host.docker.internal резолвится в IP хост-машины Windows, где запущен Ollama
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-3b-instruct-q4km}
       OLLAMA_TEMPERATURE: ${OLLAMA_TEMPERATURE:-0.2}
       OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-4096}
@@ -181,7 +186,7 @@ services:
       ENABLE_METRICS: "true"
     command: uvicorn app.main:app --host 0.0.0.0 --port 8001
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:8001/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -196,4 +201,3 @@ volumes:
     driver: local
   uploads_data:
     driver: local
-
