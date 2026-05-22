@@ -6,6 +6,10 @@ on:
   push:
     branches: [main, develop]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   visual-tests:
     runs-on: ubuntu-latest
@@ -53,11 +57,12 @@ jobs:
         if: always() && github.event_name == 'pull_request'
         with:
           report-path: playwright-report/visual
-          report-url: https://your-domain.com/visual-reports/${{ github.run_id }}
 
   update-baselines:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
     
     steps:
       - uses: actions/checkout@v4

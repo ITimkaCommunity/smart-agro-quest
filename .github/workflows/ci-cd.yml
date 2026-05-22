@@ -57,6 +57,20 @@ jobs:
     name: Backend Lint & Test
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: edufarm_test
+      JWT_SECRET: test-secret-key-minimum-32-characters-long
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      SUPABASE_URL: https://example.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: example_key
+      STORAGE_TYPE: local
+      UPLOAD_DIR: ./test-uploads
     
     services:
       postgres:
@@ -105,43 +119,29 @@ jobs:
       
       - name: Run unit tests
         run: npm run test
-        env:
-          NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USERNAME: postgres
-          DB_PASSWORD: postgres
-          DB_DATABASE: edufarm_test
-          JWT_SECRET: test-secret-key-minimum-32-characters-long
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          SUPABASE_URL: https://example.supabase.co
-          SUPABASE_SERVICE_ROLE_KEY: example_key
-          STORAGE_TYPE: local
-          UPLOAD_DIR: ./test-uploads
       
       - name: Build
         run: npm run build
-        env:
-          NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USERNAME: postgres
-          DB_PASSWORD: postgres
-          DB_DATABASE: edufarm_test
-          JWT_SECRET: test-secret-key-minimum-32-characters-long
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          SUPABASE_URL: https://example.supabase.co
-          SUPABASE_SERVICE_ROLE_KEY: example_key
-          STORAGE_TYPE: local
-          UPLOAD_DIR: ./test-uploads
 
   e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
     needs: [frontend, backend]
     timeout-minutes: 30
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: edufarm_test
+      JWT_SECRET: test-secret-key-minimum-32-characters-long
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      SUPABASE_URL: https://example.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: example_key
+      STORAGE_TYPE: local
+      UPLOAD_DIR: ./test-uploads
     
     services:
       postgres:
@@ -190,39 +190,12 @@ jobs:
       - name: Build backend
         working-directory: backend
         run: npm run build
-        env:
-          NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USERNAME: postgres
-          DB_PASSWORD: postgres
-          DB_DATABASE: edufarm_test
-          JWT_SECRET: test-secret-key-minimum-32-characters-long
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          SUPABASE_URL: https://example.supabase.co
-          SUPABASE_SERVICE_ROLE_KEY: example_key
-          STORAGE_TYPE: local
-          UPLOAD_DIR: ./test-uploads
       
       - name: Start backend
         working-directory: backend
-        run: npm run start:prod &
+        run: nohup npm run start:prod > /tmp/backend.log 2>&1 &
         env:
-          NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USERNAME: postgres
-          DB_PASSWORD: postgres
-          DB_DATABASE: edufarm_test
-          JWT_SECRET: test-secret-key-minimum-32-characters-long
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
           PORT: 3001
-          SUPABASE_URL: https://example.supabase.co
-          SUPABASE_SERVICE_ROLE_KEY: example_key
-          STORAGE_TYPE: local
-          UPLOAD_DIR: ./test-uploads
       
       - name: Wait for backend
         run: |
